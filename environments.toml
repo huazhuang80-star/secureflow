@@ -35,13 +35,7 @@ name = "testnet-user"
 default = true
 
 [staging.contracts]
-# soroban-atomic-swap-contract = { id = "C123..." }
-# soroban-auth-contract = { id = "C234..." }
-# soroban-errors-contract = { id = "C345..." }
-# soroban-hello-world-contract = { id = "C456..." }
-# soroban-increment-contract = { id = "C567..." }
-# soroban-token-contract = { id = "C678..." }
-# eurc = { id = "C789..." }
+secureflow = { id = "CD44N5JPSWBPNJJD3BRWIUMZQXV347LFHMSFDJYCDZYWYORLJS4J5Y2P", client = true }
 
 ### Production environment configuration
 [production.network]

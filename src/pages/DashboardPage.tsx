@@ -711,7 +711,7 @@ export default function DashboardPage() {
         addCrossWalletNotification(
           createMilestoneNotification("approved", escrowId, milestoneIndex, {
             clientName:
-              wallet.address!.slice(0, 6) + "..." + wallet.address!.slice(-4),
+              wallet.address.slice(0, 6) + "..." + wallet.address.slice(-4),
             projectTitle: escrow.projectDescription || `Project #${escrowId}`,
           }),
           wallet.address || undefined, // Client address

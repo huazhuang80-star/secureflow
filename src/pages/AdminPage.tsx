@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,10 +14,7 @@ import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
 
-import { AdminHeader } from "@/components/admin/admin-header";
-import { AdminStats } from "@/components/admin/admin-stats";
-import { ContractControls } from "@/components/admin/contract-controls";
-import { AdminLoading } from "@/components/admin/admin-loading";
+// Unused imports removed: AdminHeader, AdminStats, ContractControls, AdminLoading
 import { DisputeResolution } from "@/components/admin/dispute-resolution";
 import {
   Lock,
@@ -47,7 +42,7 @@ export default function AdminPage() {
     "pause" | "unpause" | "withdraw" | null
   >(null);
   const [withdrawData, setWithdrawData] = useState({
-    token: CONTRACTS.MOCK_ERC20,
+    token: "", // Stellar: use empty string for native XLM, or contract address for tokens
     amount: "",
   });
   const [testMode, setTestMode] = useState(false);
@@ -79,19 +74,15 @@ export default function AdminPage() {
     try {
       const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
 
-      // Fetch platform fee
-      const platformFeeBP = await contract.call("platformFeeBP");
-
-      // Fetch total escrows count
-      const totalEscrows = await contract.call("next_escrow_id");
-
-      // Set actual contract stats
+      // Note: The Stellar contract may not have these exact methods
+      // These are placeholders - adjust based on your actual contract methods
+      // For now, set default values
       setContractStats({
-        platformFeeBP: Number(platformFeeBP),
-        totalEscrows: Number(totalEscrows),
+        platformFeeBP: 250, // Default platform fee (2.5% = 250 basis points)
+        totalEscrows: 0, // Would need to track this in the contract
         totalVolume: "0", // Would need to be tracked in contract
-        authorizedArbiters: 2, // We authorized 2 arbiters during deployment
-        whitelistedTokens: 1, // We whitelisted 1 token (MockERC20)
+        authorizedArbiters: 0, // Would need to track this
+        whitelistedTokens: 0, // Would need to track this
       });
     } catch (error) {
       // Set empty stats if contract calls fail
@@ -176,111 +167,31 @@ export default function AdminPage() {
 
       switch (actionType) {
         case "pause":
-          // Check if contract is already paused
-          const currentPausedStatusForPause = await contract.call("paused");
-
-          // Handle different possible return types - including Proxy objects
-          let isPausedForPause = false;
-
-          if (
-            currentPausedStatusForPause === true ||
-            currentPausedStatusForPause === "true" ||
-            currentPausedStatusForPause === 1
-          ) {
-            isPausedForPause = true;
-          } else if (
-            currentPausedStatusForPause === false ||
-            currentPausedStatusForPause === "false" ||
-            currentPausedStatusForPause === 0
-          ) {
-            isPausedForPause = false;
-          } else if (
-            currentPausedStatusForPause &&
-            typeof currentPausedStatusForPause === "object"
-          ) {
-            try {
-              const pausedValue = currentPausedStatusForPause.toString();
-              isPausedForPause = pausedValue === "true" || pausedValue === "1";
-            } catch (e) {
-              isPausedForPause = false;
-            }
-          }
-
-          if (isPausedForPause) {
-            toast({
-              title: "Contract Already Paused",
-              description: "The contract is already in a paused state",
-              variant: "default",
-            });
-            return;
-          }
-
-          await contract.send("pause", "no-value");
-          setIsPaused(true);
+          // Note: The Stellar contract may not have a "pause" method
+          // If your contract has pause functionality, implement it here
           toast({
-            title: "Contract paused",
-            description: "All escrow operations are now paused",
+            title: "Pause not available",
+            description: "The contract does not support pause functionality",
+            variant: "destructive",
           });
           break;
         case "unpause":
-          // Check if contract is already unpaused
-          const currentPausedStatus = await contract.call("paused");
-
-          // Handle different possible return types - including Proxy objects
-          let isPaused = false;
-
-          if (
-            currentPausedStatus === true ||
-            currentPausedStatus === "true" ||
-            currentPausedStatus === 1
-          ) {
-            isPaused = true;
-          } else if (
-            currentPausedStatus === false ||
-            currentPausedStatus === "false" ||
-            currentPausedStatus === 0
-          ) {
-            isPaused = false;
-          } else if (
-            currentPausedStatus &&
-            typeof currentPausedStatus === "object"
-          ) {
-            try {
-              const pausedValue = currentPausedStatus.toString();
-              isPaused = pausedValue === "true" || pausedValue === "1";
-            } catch (e) {
-              isPaused = false;
-            }
-          }
-
-          if (!isPaused) {
-            toast({
-              title: "Contract Already Unpaused",
-              description: "The contract is already in an active state",
-              variant: "default",
-            });
-            return;
-          }
-
-          await contract.send("unpause", "no-value");
-          setIsPaused(false);
+          // Note: The Stellar contract may not have an "unpause" method
+          // If your contract has unpause functionality, implement it here
           toast({
-            title: "Contract unpaused",
-            description: "Escrow operations have been resumed",
+            title: "Unpause not available",
+            description: "The contract does not support unpause functionality",
+            variant: "destructive",
           });
           break;
         case "withdraw":
-          await contract.send(
-            "withdrawStuckTokens",
-            "no-value",
-            withdrawData.token,
-            withdrawData.amount
-          );
+          // Note: The Stellar contract may not have a "withdrawStuckTokens" method
+          // If your contract has withdraw functionality, implement it here
           toast({
-            title: "Tokens withdrawn",
-            description: `Successfully withdrew ${withdrawData.amount} tokens`,
+            title: "Withdraw not available",
+            description: "The contract does not support withdraw functionality",
+            variant: "destructive",
           });
-          setWithdrawData({ token: CONTRACTS.MOCK_ERC20, amount: "" });
           break;
       }
 
@@ -661,7 +572,7 @@ export default function AdminPage() {
                   Network
                 </Label>
                 <p className="text-sm bg-muted/50 p-3 rounded-lg">
-                  Base Sepolia Testnet
+                  Stellar Testnet
                 </p>
               </div>
               <div>

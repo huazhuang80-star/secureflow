@@ -1,12 +1,17 @@
 {
-  "name": "SecureFlow - Trustless Escrow on Base",
+  "name": "SecureFlow - Trustless Escrow on Stellar",
   "short_name": "SecureFlow",
-  "description": "Trustless payments with transparent milestones powered by Base",
+  "description": "Trustless payments with transparent milestones powered by Stellar",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#6366f1",
   "icons": [
+    {
+      "src": "/secureflow-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
     {
       "src": "/placeholder-logo.png",
       "sizes": "192x192",

@@ -2,7 +2,7 @@
 
 import {
   createContext,
-  useContext,
+  use,
   useState,
   useEffect,
   type ReactNode,
@@ -253,7 +253,7 @@ export function DelegationProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DelegationContext.Provider
+    <DelegationContext
       value={{
         delegations,
         createDelegation,
@@ -264,12 +264,12 @@ export function DelegationProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </DelegationContext.Provider>
+    </DelegationContext>
   );
 }
 
 export function useDelegation() {
-  const context = useContext(DelegationContext);
+  const context = use(DelegationContext);
   if (context === undefined) {
     throw new Error("useDelegation must be used within a DelegationProvider");
   }

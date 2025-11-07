@@ -2,7 +2,7 @@
 
 import {
   createContext,
-  useContext,
+  use,
   useState,
   useEffect,
   type ReactNode,
@@ -202,7 +202,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <NotificationContext.Provider
+    <NotificationContext
       value={{
         notifications,
         unreadCount,
@@ -215,12 +215,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </NotificationContext.Provider>
+    </NotificationContext>
   );
 }
 
 export function useNotifications() {
-  const context = useContext(NotificationContext);
+  const context = use(NotificationContext);
   if (context === undefined) {
     throw new Error(
       "useNotifications must be used within a NotificationProvider",

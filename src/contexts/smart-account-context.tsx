@@ -3,7 +3,7 @@
 
 import {
   createContext,
-  useContext,
+  use,
   useState,
   useEffect,
   type ReactNode,
@@ -192,7 +192,7 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SmartAccountContext.Provider
+    <SmartAccountContext
       value={{
         smartAccount,
         initializeSmartAccount,
@@ -204,12 +204,12 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </SmartAccountContext.Provider>
+    </SmartAccountContext>
   );
 }
 
 export function useSmartAccount() {
-  const context = useContext(SmartAccountContext);
+  const context = use(SmartAccountContext);
   if (context === undefined) {
     throw new Error(
       "useSmartAccount must be used within a SmartAccountProvider"

@@ -6,7 +6,7 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { getCurrentNetwork, CONTRACTS } from "@/lib/web3/stellar-config";
+import { getCurrentNetwork } from "@/lib/web3/stellar-config";
 import type { WalletState } from "@/lib/web3/types";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -15,10 +15,6 @@ import {
   Address,
   nativeToScVal,
   scValToNative,
-  xdr,
-  TransactionBuilder,
-  Operation,
-  Networks,
 } from "@stellar/stellar-sdk";
 import {
   wallet,
@@ -26,6 +22,7 @@ import {
   disconnectWallet as disconnectWalletUtil,
 } from "@/util/wallet";
 import storage from "@/util/storage";
+import { Client as SecureFlowClient } from "@/contracts/generated/src/index";
 
 interface Web3ContextType {
   wallet: WalletState;
@@ -35,6 +32,7 @@ interface Web3ContextType {
   getContract: (contractId: string) => any;
   isOwner: boolean;
   network: ReturnType<typeof getCurrentNetwork>;
+  refreshBalance: () => Promise<void>;
 }
 
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
@@ -97,11 +95,18 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           const publicKey = addressResult.address;
 
           if (publicKey) {
-            // Get balance from RPC
+            // Get balance from Horizon API (more reliable than RPC)
             try {
-              const server = createRpcServer();
-              const account = await server.getAccount(publicKey);
-              const balance = account.balances.find(
+              const { Horizon } = await import("@stellar/stellar-sdk");
+              const horizonUrl =
+                network.horizonUrl || "https://horizon-testnet.stellar.org";
+              const horizon = new Horizon.Server(horizonUrl);
+
+              const account = await horizon
+                .accounts()
+                .accountId(publicKey)
+                .call();
+              const nativeBalance = account.balances.find(
                 (b: any) => b.asset_type === "native"
               );
 
@@ -109,11 +114,14 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                 address: publicKey,
                 chainId: null, // Stellar doesn't use chain IDs
                 isConnected: true,
-                balance: balance ? parseFloat(balance.balance).toFixed(4) : "0",
+                balance: nativeBalance
+                  ? parseFloat(nativeBalance.balance).toFixed(4)
+                  : "0",
               });
 
               await checkOwnerStatus(publicKey);
-            } catch (error) {
+            } catch (error: any) {
+              console.error("Error fetching balance:", error);
               // If account doesn't exist yet, still set connected
               setWalletState({
                 address: publicKey,
@@ -172,11 +180,15 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Get balance
+        // Get balance from Horizon API (more reliable than RPC)
         try {
-          const server = createRpcServer();
-          const account = await server.getAccount(publicKey);
-          const balance = account.balances.find(
+          const { Horizon } = await import("@stellar/stellar-sdk");
+          const horizonUrl =
+            network.horizonUrl || "https://horizon-testnet.stellar.org";
+          const horizon = new Horizon.Server(horizonUrl);
+
+          const account = await horizon.accounts().accountId(publicKey).call();
+          const nativeBalance = account.balances.find(
             (b: any) => b.asset_type === "native"
           );
 
@@ -184,7 +196,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             address: publicKey,
             chainId: null,
             isConnected: true,
-            balance: balance ? parseFloat(balance.balance).toFixed(4) : "0",
+            balance: nativeBalance
+              ? parseFloat(nativeBalance.balance).toFixed(4)
+              : "0",
           });
 
           await checkOwnerStatus(publicKey);
@@ -196,7 +210,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
               6
             )}...${publicKey.slice(-4)}`,
           });
-        } catch (error) {
+        } catch (error: any) {
+          console.error("Error fetching balance:", error);
           // Account might not exist yet
           setWalletState({
             address: publicKey,
@@ -264,20 +279,57 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    const contract = new Contract(contractId);
-    const server = createRpcServer();
+    // Use the generated contract client for type-safe contract interactions
+    const client = new SecureFlowClient({
+      contractId,
+      networkPassphrase: network.networkPassphrase,
+      rpcUrl: network.rpcUrl,
+    });
 
+    // Return a wrapper that provides both the generated client and a compatible interface
     return {
+      // Generated client with all typed methods
+      client,
+
+      // Legacy call interface for backward compatibility
       async call(method: string, ...args: any[]) {
         try {
-          // Convert arguments to ScVal
+          // Use the generated client's methods for read operations
+          if (method === "get_escrow" && args[0] !== undefined) {
+            const assembledTx = await client.get_escrow({ escrow_id: args[0] });
+            // The client automatically simulates, so we can access the result directly
+            return assembledTx.result;
+          }
+
+          if (method === "get_user_escrows" && args[0] !== undefined) {
+            const assembledTx = await client.get_user_escrows({
+              user: args[0],
+            });
+            return assembledTx.result;
+          }
+
+          if (method === "get_reputation" && args[0] !== undefined) {
+            const assembledTx = await client.get_reputation({ user: args[0] });
+            return assembledTx.result;
+          }
+
+          if (method === "paused") {
+            // Check if contract is paused (this might need to be added to the contract)
+            return false;
+          }
+
+          // Fallback for methods not in the map
+          console.warn(
+            `Method ${method} not found in generated client, using fallback`
+          );
+          const contract = new Contract(contractId);
+          const server = createRpcServer();
+
           const methodArgs = args.map((arg) => {
             if (typeof arg === "string") {
-              // Check if it's an address
               try {
                 return Address.fromString(arg).toScVal();
               } catch {
-                // It's a string, not an address
                 return nativeToScVal(arg, { type: "string" });
               }
             } else if (typeof arg === "number") {
@@ -288,7 +340,6 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             return nativeToScVal(arg);
           });
 
-          // Simulate the call
           const result = await server.simulateTransaction(
             contract.call(method, ...methodArgs)
           );
@@ -297,7 +348,6 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             throw new Error(result.errorResult.value().toString());
           }
 
-          // Convert result back to native format
           if (result.returnValue) {
             try {
               return scValToNative(result.returnValue);
@@ -312,48 +362,52 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           throw error;
         }
       },
+
+      // Legacy send interface for backward compatibility
       async send(method: string, ...args: any[]) {
         try {
           if (!walletState.isConnected || !walletState.address) {
             throw new Error("Wallet not connected");
           }
 
-          // Convert arguments to ScVal
-          const methodArgs = args.map((arg) => {
-            if (typeof arg === "string") {
-              try {
-                return Address.fromString(arg).toScVal();
-              } catch {
-                return nativeToScVal(arg, { type: "string" });
-              }
-            } else if (typeof arg === "number") {
-              return nativeToScVal(arg, { type: "i128" });
-            } else if (typeof arg === "boolean") {
-              return nativeToScVal(arg, { type: "bool" });
-            }
-            return nativeToScVal(arg);
-          });
+          // Use the generated client's methods for sending transactions
+          let assembledTx: any;
 
-          // Get source account
-          const sourceAccount = await server.getAccount(walletState.address);
+          if (method === "create_escrow" && args[0]) {
+            assembledTx = await client.create_escrow(args[0]);
+          } else if (method === "start_work" && args[0]) {
+            assembledTx = await client.start_work(args[0]);
+          } else if (method === "submit_milestone" && args[0]) {
+            assembledTx = await client.submit_milestone(args[0]);
+          } else if (method === "approve_milestone" && args[0]) {
+            assembledTx = await client.approve_milestone(args[0]);
+          } else if (method === "apply_to_job" && args[0]) {
+            assembledTx = await client.apply_to_job(args[0]);
+          } else if (method === "accept_freelancer" && args[0]) {
+            assembledTx = await client.accept_freelancer(args[0]);
+          } else if (method === "refund_escrow" && args[0]) {
+            assembledTx = await client.refund_escrow(args[0]);
+          } else if (method === "emergency_refund_after_deadline" && args[0]) {
+            assembledTx = await client.emergency_refund_after_deadline(args[0]);
+          } else if (method === "extend_deadline" && args[0]) {
+            assembledTx = await client.extend_deadline(args[0]);
+          } else if (method === "set_platform_fee_bp" && args[0]) {
+            assembledTx = await client.set_platform_fee_bp(args[0]);
+          } else if (method === "set_fee_collector" && args[0]) {
+            assembledTx = await client.set_fee_collector(args[0]);
+          } else if (method === "whitelist_token" && args[0]) {
+            assembledTx = await client.whitelist_token(args[0]);
+          } else if (method === "authorize_arbiter" && args[0]) {
+            assembledTx = await client.authorize_arbiter(args[0]);
+          } else {
+            throw new Error(
+              `Method ${method} not supported in generated client`
+            );
+          }
 
-          // Create contract invocation operation
-          const operation = contract.call(method, ...methodArgs);
-
-          // Build transaction
-          const transaction = new TransactionBuilder(sourceAccount, {
-            fee: "100",
-            networkPassphrase: network.networkPassphrase,
-          })
-            .addOperation(operation)
-            .setTimeout(30)
-            .build();
-
-          // Prepare transaction (simulate and get resource fees)
-          const prepared = await server.prepareTransaction(transaction);
-
-          // Sign with Stellar Wallets Kit
-          const signResult = await wallet.signTransaction(prepared.toXDR(), {
+          // Sign the transaction
+          const xdr = assembledTx.toXDR();
+          const signResult = await wallet.signTransaction(xdr, {
             address: walletState.address,
             networkPassphrase: network.networkPassphrase,
           });
@@ -362,41 +416,50 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             throw new Error("Transaction signing failed");
           }
 
-          const signed = signResult.signedTxXdr;
-
-          // Parse signed transaction
-          const signedTx = TransactionBuilder.fromXDR(
-            signed,
-            network.networkPassphrase
-          );
-
-          // Submit transaction
-          const response = await server.sendTransaction(signedTx);
-
-          if (response.errorResult) {
-            throw new Error(response.errorResult.value().toString());
-          }
-
-          // Wait for transaction to complete
-          let txResponse = await server.getTransaction(response.hash);
-          let attempts = 0;
-          while (txResponse.status === "NOT_FOUND" && attempts < 10) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            txResponse = await server.getTransaction(response.hash);
-            attempts++;
-          }
-
-          return response.hash;
+          // Send the signed transaction
+          const result = await assembledTx.signAndSend(signResult.signedTxXdr);
+          return result.hash;
         } catch (error: any) {
           console.error(`Error sending ${method}:`, error);
           throw error;
         }
       },
+
       async owner() {
         // Return owner address if available
         return import.meta.env.VITE_OWNER_ADDRESS || "";
       },
     };
+  };
+
+  const refreshBalance = async () => {
+    if (!walletState.isConnected || !walletState.address) {
+      return;
+    }
+
+    try {
+      const { Horizon } = await import("@stellar/stellar-sdk");
+      const horizonUrl =
+        network.horizonUrl || "https://horizon-testnet.stellar.org";
+      const horizon = new Horizon.Server(horizonUrl);
+
+      const account = await horizon
+        .accounts()
+        .accountId(walletState.address)
+        .call();
+      const nativeBalance = account.balances.find(
+        (b: any) => b.asset_type === "native"
+      );
+
+      setWalletState((prev) => ({
+        ...prev,
+        balance: nativeBalance
+          ? parseFloat(nativeBalance.balance).toFixed(4)
+          : "0",
+      }));
+    } catch (error) {
+      console.error("Error refreshing balance:", error);
+    }
   };
 
   return (
@@ -409,6 +472,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         getContract,
         isOwner,
         network,
+        refreshBalance,
       }}
     >
       {children}

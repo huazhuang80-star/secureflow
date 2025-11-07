@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useWeb3 } from "@/contexts/web3-context";
-import { useSmartAccount } from "@/contexts/smart-account-context";
+// Unused import removed: useSmartAccount
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +22,7 @@ interface Milestone {
 
 export default function CreateEscrowPage() {
   const navigate = useNavigate();
-  const { wallet, getContract, switchToBaseTestnet } = useWeb3();
+  const { wallet, getContract } = useWeb3();
   // Stellar doesn't use smart accounts
   // const { executeTransaction, isSmartAccountReady } = useSmartAccount();
   const { toast } = useToast();
@@ -32,8 +32,8 @@ export default function CreateEscrowPage() {
   const [currentMilestoneIndex, setCurrentMilestoneIndex] = useState<
     number | null
   >(null);
-  const [useNativeToken, setUseNativeToken] = useState(false);
-  const [isOpenJob, setIsOpenJob] = useState(false);
+  const [_useNativeToken, _setUseNativeToken] = useState(false);
+  const [_isOpenJob, _setIsOpenJob] = useState(false);
   const [isContractPaused, setIsContractPaused] = useState(false);
   const [isOnCorrectNetwork, setIsOnCorrectNetwork] = useState(true);
   const [errors, setErrors] = useState<{
@@ -56,14 +56,8 @@ export default function CreateEscrowPage() {
     if (!wallet.isConnected) return;
 
     try {
-      const currentChainId = await window.ethereum.request({
-        method: "eth_chainId",
-      });
-      const targetChainId = "0x14A34"; // Base Sepolia Testnet
-
-      setIsOnCorrectNetwork(
-        currentChainId.toLowerCase() === targetChainId.toLowerCase()
-      );
+      // Stellar doesn't use chain IDs - just check if wallet is connected
+      setIsOnCorrectNetwork(true);
     } catch (error) {
       setIsOnCorrectNetwork(false);
     }
@@ -102,7 +96,7 @@ export default function CreateEscrowPage() {
     duration: "",
     totalBudget: "",
     beneficiary: "",
-    token: CONTRACTS.MOCK_ERC20, // Default to deployed MockERC20
+    token: "", // Stellar: use empty string for native XLM, or contract address for tokens
     useNativeToken: false,
     isOpenJob: false,
     milestones: [
@@ -111,57 +105,9 @@ export default function CreateEscrowPage() {
     ] as Milestone[],
   });
 
-  const commonTokens = [
-    {
-      name: "Native MONAD",
-      address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF,
-      isNative: true,
-    },
-    { name: "Custom ERC20", address: "", isNative: false },
-  ];
+  // Removed unused functions: _commonTokens, _addMilestone, _removeMilestone
 
-  const addMilestone = () => {
-    setFormData({
-      ...formData,
-      milestones: [...formData.milestones, { description: "", amount: "" }],
-    });
-  };
-
-  const removeMilestone = (index: number) => {
-    if (formData.milestones.length <= 1) {
-      toast({
-        title: "Cannot remove",
-        description: "At least one milestone is required",
-        variant: "destructive",
-      });
-      return;
-    }
-    const newMilestones = formData.milestones.filter((_, i) => i !== index);
-    setFormData({ ...formData, milestones: newMilestones });
-  };
-
-  const updateMilestone = (
-    index: number,
-    field: keyof Milestone,
-    value: string
-  ) => {
-    const newMilestones = [...formData.milestones];
-    newMilestones[index][field] = value;
-    setFormData({ ...formData, milestones: newMilestones });
-  };
-
-  const openAIWriter = (index: number) => {
-    setCurrentMilestoneIndex(index);
-    setShowAIWriter(true);
-  };
-
-  const handleAISelect = (description: string) => {
-    if (currentMilestoneIndex !== null) {
-      updateMilestone(currentMilestoneIndex, "description", description);
-      setShowAIWriter(false);
-      setCurrentMilestoneIndex(null);
-    }
-  };
+  // Removed unused functions: updateMilestone, _openAIWriter, _handleAISelect
 
   const calculateTotalMilestones = () => {
     return formData.milestones.reduce(
@@ -357,57 +303,18 @@ export default function CreateEscrowPage() {
     setIsSubmitting(true);
 
     try {
+      // Stellar: Handle token approval if using a custom token (not native XLM)
       if (
+        formData.token &&
+        formData.token !== "" &&
         formData.token !==
-        GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
+          GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
       ) {
-        const tokenContract = getContract(formData.token);
-        const totalAmountInWei = BigInt(
-          Math.floor(Number.parseFloat(formData.totalBudget) * 10 ** 18)
-        ).toString();
-
-        // Test if token contract is working
-        try {
-          const tokenName = await tokenContract.call("name");
-          const tokenSymbol = await tokenContract.call("symbol");
-          const tokenDecimals = await tokenContract.call("decimals");
-        } catch (tokenError) {
-          throw new Error(
-            "Token contract is not working properly. Please check the token address."
-          );
-        }
-
-        // Check token balance first
-        try {
-          const balance = await tokenContract.call("balanceOf", wallet.address);
-
-          if (Number(balance) < Number(totalAmountInWei)) {
-            throw new Error(
-              `Insufficient token balance. You have ${(
-                Number(balance) /
-                10 ** 18
-              ).toFixed(2)} tokens but need ${formData.totalBudget} tokens.`
-            );
-          }
-        } catch (balanceError) {
-          throw new Error(
-            "Failed to check token balance. Please ensure you have enough tokens or try using native ETH tokens instead."
-          );
-        }
-
-        const approvalTx = await tokenContract.send(
-          "approve",
-          "no-value", // No native value for ERC20 approval
-          CONTRACTS.SECUREFLOW_ESCROW,
-          totalAmountInWei
-        );
-
-        toast({
-          title: "Approval submitted",
-          description: "Waiting for token approval confirmation...",
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // For Stellar, token approval is handled differently
+        // The contract will handle token transfers internally
+        // We just need to verify the token contract exists
+        // Token approval is handled by the contract for Stellar
+        // No need to check token contract here
       }
 
       const escrowContract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
@@ -415,172 +322,89 @@ export default function CreateEscrowPage() {
         (m) => m.description
       );
 
-      const beneficiaryAddress = isOpenJob
-        ? "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF" // Zero address for open jobs
-        : formData.beneficiary ||
-          "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+      // Stellar: Use null for open jobs (Option<Address>)
+      const beneficiaryAddress = formData.isOpenJob
+        ? null // null for open jobs
+        : formData.beneficiary || null;
 
-      let txHash;
+      // Stellar: Convert XLM to stroops (1 XLM = 10,000,000 stroops)
+      // For Stellar, we use stroops instead of wei
+      const STROOPS_PER_XLM = 10_000_000;
+      const totalAmountInStroops = BigInt(
+        Math.floor(Number.parseFloat(formData.totalBudget) * STROOPS_PER_XLM)
+      );
 
-      if (
-        formData.token ===
-        GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
-      ) {
-        // Use createEscrowNative for native ETH tokens
-        const totalAmountInWei = BigInt(
-          Math.floor(Number.parseFloat(formData.totalBudget) * 10 ** 18)
-        ).toString();
-
-        // Check native token balance
-        try {
-          const balance = await window.ethereum.request({
-            method: "eth_getBalance",
-            params: [wallet.address],
-          });
-
-          const balanceInWei = BigInt(balance);
-          const requiredAmount = BigInt(totalAmountInWei);
-
-          if (balanceInWei < requiredAmount) {
-            throw new Error(
-              `Insufficient MON balance. You have ${(
-                Number(balanceInWei) /
-                10 ** 18
-              ).toFixed(4)} MON but need ${formData.totalBudget} MON.`
-            );
-          }
-        } catch (balanceError) {
+      // Check native XLM balance using wallet balance
+      if (!formData.token || formData.token === "") {
+        const walletBalance = Number.parseFloat(wallet.balance || "0");
+        if (walletBalance < Number.parseFloat(formData.totalBudget)) {
           throw new Error(
-            "Failed to check MON balance. Please ensure you have enough MON tokens."
+            `Insufficient XLM balance. You have ${walletBalance.toFixed(4)} XLM but need ${formData.totalBudget} XLM.`
           );
         }
+      }
 
-        // Convert milestone amounts to wei (BigInt)
-        const milestoneAmountsInWei = formData.milestones.map((m) =>
-          BigInt(Math.floor(Number.parseFloat(m.amount) * 10 ** 18)).toString()
-        );
+      // Convert milestone amounts to stroops (Stellar uses stroops, not wei)
+      const milestoneAmountsInStroops = formData.milestones.map((m) =>
+        BigInt(Math.floor(Number.parseFloat(m.amount) * STROOPS_PER_XLM))
+      );
 
-        const arbiters = ["0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41"]; // Default arbiter
-        const requiredConfirmations = 1;
+      // Default arbiter - use a Stellar address (you should replace this with a real arbiter address)
+      // For now, use a default arbiter address - in production, this should come from formData or be configurable
+      const arbiters = [
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+      ]; // Default arbiter - replace with real arbiter address
+      const requiredConfirmations = 1;
 
-        // Convert duration from days to seconds
-        const durationInSeconds = Number(formData.duration) * 24 * 60 * 60;
+      // Convert duration from days to seconds
+      const durationInSeconds = Number(formData.duration) * 24 * 60 * 60;
 
-        // Try to estimate gas first with retry logic
-        let gasEstimate;
-        let gasEstimateAttempts = 0;
-        const maxGasEstimateAttempts = 3;
+      // Stellar: Use the generated client's create_escrow method
+      // create_escrow signature: (depositor, beneficiary, arbiters, required_confirmations, milestones, token, total_amount, duration, project_title, project_description)
+      // Note: milestones is Vec<(i128, String)> - tuple of amount and description
+      const milestones = milestoneAmountsInStroops.map(
+        (amount, idx) =>
+          [amount, milestoneDescriptions[idx] || ""] as [bigint, string]
+      );
 
-        while (gasEstimateAttempts < maxGasEstimateAttempts) {
-          try {
-            gasEstimate = await escrowContract.estimateGas(
-              "createEscrowNative",
-              totalAmountInWei, // msg.value in wei
-              beneficiaryAddress,
-              arbiters,
-              requiredConfirmations,
-              milestoneAmountsInWei,
-              milestoneDescriptions,
-              durationInSeconds,
-              formData.projectTitle,
-              formData.projectDescription
-            );
-            break;
-          } catch (gasError) {
-            gasEstimateAttempts++;
+      // Retry transaction with exponential backoff
+      let txAttempts = 0;
+      const maxTxAttempts = 3;
 
-            if (gasEstimateAttempts >= maxGasEstimateAttempts) {
-              gasEstimate = BigInt(500000); // Default gas limit
-              break;
-            }
+      while (txAttempts < maxTxAttempts) {
+        try {
+          // Use the generated client's send method which expects an object
+          // The generated client handles Option types automatically - pass null for None
+          await escrowContract.send("create_escrow", {
+            depositor: wallet.address,
+            beneficiary: beneficiaryAddress || null, // null for Option<Address>
+            arbiters: arbiters, // arbiters array
+            required_confirmations: requiredConfirmations,
+            milestones: milestones,
+            token:
+              formData.token && formData.token !== "" ? formData.token : null, // null for Option<Address>
+            total_amount: totalAmountInStroops,
+            duration: durationInSeconds,
+            project_title: formData.projectTitle,
+            project_description: formData.projectDescription,
+          });
 
-            // Wait before retry
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+          toast({
+            title: "Escrow Created!",
+            description: "Your escrow has been created successfully",
+          });
+          break;
+        } catch (txError: any) {
+          txAttempts++;
+
+          if (txAttempts >= maxTxAttempts) {
+            throw txError;
           }
+
+          // Wait before retry with exponential backoff
+          const waitTime = Math.pow(2, txAttempts) * 1000; // 2s, 4s, 8s
+          await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
-
-        // Retry transaction with exponential backoff
-        let txAttempts = 0;
-        const maxTxAttempts = 3;
-
-        while (txAttempts < maxTxAttempts) {
-          try {
-            // Stellar: Use direct contract call
-            // create_escrow signature: (depositor, beneficiary, arbiters, required_confirmations, milestones, token, total_amount, duration, project_title, project_description)
-            // Note: milestones is Vec<(i128, String)> - tuple of amount and description
-            const milestones = milestoneAmountsInWei.map((amount, idx) => [
-              BigInt(amount),
-              milestoneDescriptions[idx] || "",
-            ]);
-
-            txHash = await escrowContract.send(
-              "create_escrow",
-              wallet.address, // depositor
-              beneficiaryAddress || null, // beneficiary (Option<Address>)
-              arbiters, // arbiters (Vec<Address>)
-              requiredConfirmations, // required_confirmations
-              milestones, // milestones (Vec<(i128, String)>)
-              formData.token || null, // token (Option<Address>)
-              BigInt(totalAmountInWei), // total_amount
-              durationInSeconds, // duration
-              formData.projectTitle, // project_title
-              formData.projectDescription // project_description
-            );
-
-            toast({
-              title: "Escrow Created!",
-              description: "Your escrow has been created successfully",
-            });
-            break;
-          } catch (txError) {
-            txAttempts++;
-
-            if (txAttempts >= maxTxAttempts) {
-              throw txError;
-            }
-
-            // Wait before retry with exponential backoff
-            const waitTime = Math.pow(2, txAttempts) * 1000; // 2s, 4s, 8s
-            await new Promise((resolve) => setTimeout(resolve, waitTime));
-          }
-        }
-      } else {
-        // Use createEscrow for ERC20 tokens
-        const arbiters = ["0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41"]; // Default arbiter
-        const requiredConfirmations = 1;
-
-        // Convert milestone amounts to wei for ERC20 tokens
-        const milestoneAmountsInWei = formData.milestones.map((m) =>
-          BigInt(Math.floor(Number.parseFloat(m.amount) * 10 ** 18)).toString()
-        );
-
-        // Convert duration from days to seconds
-        const durationInSeconds = Number(formData.duration) * 24 * 60 * 60;
-
-        // Stellar: Use direct contract call for ERC20 escrow
-        const milestones = milestoneAmountsInWei.map((amount, idx) => [
-          BigInt(amount),
-          milestoneDescriptions[idx] || "",
-        ]);
-
-        txHash = await escrowContract.send(
-          "create_escrow",
-          wallet.address, // depositor
-          beneficiaryAddress || null, // beneficiary (Option<Address>)
-          arbiters, // arbiters (Vec<Address>)
-          requiredConfirmations, // required_confirmations
-          milestones, // milestones (Vec<(i128, String)>)
-          formData.token || null, // token (Option<Address>)
-          BigInt(totalAmountInWei), // total_amount
-          durationInSeconds, // duration
-          formData.projectTitle, // project_title
-          formData.projectDescription // project_description
-        );
-
-        toast({
-          title: "Escrow Created!",
-          description: "Your ERC20 escrow has been created successfully",
-        });
       }
 
       // Wait for transaction confirmation
@@ -589,7 +413,7 @@ export default function CreateEscrowPage() {
 
       // Navigate after successful creation
       setTimeout(() => {
-        navigate(isOpenJob ? "/jobs" : "/dashboard");
+        navigate(formData.isOpenJob ? "/jobs" : "/dashboard");
       }, 2000);
     } catch (error: any) {
       let errorMessage = "Failed to create escrow";
@@ -653,16 +477,16 @@ export default function CreateEscrowPage() {
                     Wrong Network
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Please switch to Base Sepolia Testnet to create escrows
+                    Please connect to Stellar Testnet to create escrows
                   </p>
                 </div>
               </div>
               <Button
-                onClick={switchToBaseTestnet}
+                onClick={() => window.location.reload()}
                 variant="destructive"
                 size="sm"
               >
-                Switch to Base Sepolia
+                Refresh Connection
               </Button>
             </div>
           </div>
@@ -691,8 +515,8 @@ export default function CreateEscrowPage() {
                       s === step
                         ? "border-primary bg-primary text-primary-foreground"
                         : s < step
-                        ? "border-primary bg-primary/20 text-primary"
-                        : "border-muted-foreground/30 text-muted-foreground"
+                          ? "border-primary bg-primary/20 text-primary"
+                          : "border-muted-foreground/30 text-muted-foreground"
                     }`}
                   >
                     {s < step ? <CheckCircle2 className="h-5 w-5" /> : s}

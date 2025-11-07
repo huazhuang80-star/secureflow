@@ -1,10 +1,7 @@
-
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
@@ -35,7 +32,7 @@ export function ProjectDetailsStep({
   formData,
   onUpdate,
   isContractPaused,
-  errors = {},
+  errors = {} as ProjectDetailsStepProps["errors"],
 }: ProjectDetailsStepProps) {
   return (
     <Card className="glass border-primary/20 p-6">
@@ -207,7 +204,7 @@ export function ProjectDetailsStep({
               ) : (
                 <p className="text-xs text-muted-foreground mt-1">
                   Enter the contract address of your ERC20 token deployed on
-                  Base Sepolia Testnet. Default: MockERC20 token
+                  Stellar Testnet. Default: Native XLM token
                 </p>
               )}
             </div>
