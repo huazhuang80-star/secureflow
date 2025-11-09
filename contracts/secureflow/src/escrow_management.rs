@@ -73,8 +73,16 @@ pub fn create_escrow(
         let token_client = token::Client::new(env, token_addr);
         token_client.transfer(&depositor, &env.current_contract_address(), &total_amount);
     } else {
-        // Native token transfer would be handled by the caller
-        // In Soroban, native XLM transfers are done via the contract's balance
+        // Transfer native XLM using Stellar Asset Contract (SAC)
+        // Native XLM SAC address for testnet
+        let native_token_str = String::from_str(env, "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC");
+        let native_token_address = Address::from_string(&native_token_str);
+        let native_token_client = token::Client::new(env, &native_token_address);
+        native_token_client.transfer(
+            &depositor,
+            &env.current_contract_address(),
+            &total_amount,
+        );
     }
     
     let current_escrowed: i128 = env

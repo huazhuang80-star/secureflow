@@ -25,11 +25,12 @@ export interface Escrow {
   createdAt: number;
   duration: number;
   milestones: Milestone[];
-  projectDescription?: string;
+  projectTitle?: string; // Project title from blockchain
+  projectDescription?: string; // Project description from blockchain
   isOpenJob?: boolean; // true if no freelancer assigned yet
   applications?: Application[];
   applicationCount?: number; // real count from blockchain
-  isJobCreator?: boolean; // true if current user is the job creator
+  isJobCreator?: boolean; // true if current user is the job creator (from blockchain)
   isClient?: boolean; // true if current user is the client (payer)
   isFreelancer?: boolean; // true if current user is the freelancer (beneficiary)
   milestoneCount?: number; // total number of milestones for this escrow

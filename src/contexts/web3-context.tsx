@@ -114,13 +114,16 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                 (b: any) => b.asset_type === "native"
               );
 
+              // Get full precision balance from blockchain
+              const fullBalance = nativeBalance
+                ? parseFloat(nativeBalance.balance)
+                : 0;
+
               setWalletState({
                 address: publicKey,
                 chainId: null, // Stellar doesn't use chain IDs
                 isConnected: true,
-                balance: nativeBalance
-                  ? parseFloat(nativeBalance.balance).toFixed(4)
-                  : "0",
+                balance: fullBalance.toFixed(7), // Use 7 decimals for XLM (full precision)
               });
 
               await checkOwnerStatus(publicKey);
@@ -196,13 +199,16 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             (b: any) => b.asset_type === "native"
           );
 
+          // Get full precision balance from blockchain
+          const fullBalance = nativeBalance
+            ? parseFloat(nativeBalance.balance)
+            : 0;
+
           setWalletState({
             address: publicKey,
             chainId: null,
             isConnected: true,
-            balance: nativeBalance
-              ? parseFloat(nativeBalance.balance).toFixed(4)
-              : "0",
+            balance: fullBalance.toFixed(7), // Use 7 decimals for XLM (full precision)
           });
 
           await checkOwnerStatus(publicKey);
@@ -320,14 +326,13 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             return assembledTx.result;
           }
 
-          if (method === "owner") {
-            // The contract stores owner in instance storage with DataKey::Owner
-            // For now, we'll use the environment variable with a fallback
-            const DEFAULT_OWNER =
-              "GC2AVGP5VDS27LR5LWTUPWZUJSPZXT6V7ZORJ5RKYJVHYXXANWTFXYLG";
-            const ownerFromEnv =
-              import.meta.env.VITE_OWNER_ADDRESS || DEFAULT_OWNER;
-            return ownerFromEnv;
+          if (method === "owner" || method === "get_owner") {
+            // Use ContractService to read owner from contract storage
+            const { ContractService } = await import(
+              "@/lib/web3/contract-service"
+            );
+            const contractService = new ContractService(contractId);
+            return await contractService.getOwner();
           }
 
           if (method === "next_escrow_id") {
@@ -1187,11 +1192,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         (b: any) => b.asset_type === "native"
       );
 
+      // Get full precision balance from blockchain
+      const fullBalance = nativeBalance ? parseFloat(nativeBalance.balance) : 0;
+
       setWalletState((prev) => ({
         ...prev,
-        balance: nativeBalance
-          ? parseFloat(nativeBalance.balance).toFixed(4)
-          : "0",
+        balance: fullBalance.toFixed(7), // Use 7 decimals for XLM (full precision)
       }));
     } catch (error) {
       console.error("Error refreshing balance:", error);

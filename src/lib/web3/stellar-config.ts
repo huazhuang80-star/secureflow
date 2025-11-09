@@ -19,9 +19,9 @@ export const STELLAR_NETWORKS = {
 
 // Contract IDs (will be set after deployment)
 // Fallback to the deployed contract ID if env variable is not set
-// Testnet contract ID (deployed on testnet) - Updated with pause/unpause functions
+// Testnet contract ID (deployed on testnet) - Updated with token transfer support
 const DEFAULT_CONTRACT_ID =
-  "CALLYK2XNLXDCSCZSHZT66P7MM2JM6BQIURY2VBPHPGKIH5VPOPNS34Q";
+  "CCNNZEAC2IFGQNGVCYUQMQMETXMRAZHMXR6HNMPDR6V7HU3PZ5PFJNCC";
 
 export const CONTRACTS = {
   SECUREFLOW_ESCROW:
@@ -34,5 +34,22 @@ export const getCurrentNetwork = () => {
   return (
     STELLAR_NETWORKS[env as keyof typeof STELLAR_NETWORKS] ||
     STELLAR_NETWORKS.testnet
+  );
+};
+
+// Native XLM SAC (Stellar Asset Contract) addresses
+// These are the contract addresses for the native XLM asset contract on each network
+export const NATIVE_XLM_SAC_ADDRESSES = {
+  testnet: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC", // Native XLM SAC on testnet
+  mainnet: "", // TODO: Add mainnet SAC address when available
+  local: "", // TODO: Add local SAC address when available
+};
+
+// Get native XLM SAC address for current network
+export const getNativeXLMSACAddress = () => {
+  const env = import.meta.env.VITE_STELLAR_NETWORK || "testnet";
+  return (
+    NATIVE_XLM_SAC_ADDRESSES[env as keyof typeof NATIVE_XLM_SAC_ADDRESSES] ||
+    NATIVE_XLM_SAC_ADDRESSES.testnet
   );
 };

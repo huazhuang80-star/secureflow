@@ -1,6 +1,6 @@
 use crate::escrow_core;
 use crate::storage_types::{DataKey, EscrowStatus, SecureFlowError, INSTANCE_BUMP_AMOUNT, INSTANCE_LIFETIME_THRESHOLD};
-use soroban_sdk::{token, Address, Env, Error};
+use soroban_sdk::{token, Address, Env, Error, String};
 
 const EMERGENCY_REFUND_DELAY: u32 = 2592000; // 30 days in seconds
 
@@ -57,8 +57,15 @@ pub fn refund_escrow(env: &Env, escrow_id: u32, depositor: Address) -> Result<()
         let token_client = token::Client::new(env, &token_addr);
         token_client.transfer(&env.current_contract_address(), &depositor, &refund_amount);
     } else {
-        // Native XLM refund
-        // In Soroban, this would be handled via contract balance transfers
+        // Transfer native XLM refund using Stellar Asset Contract (SAC)
+        let native_token_str = String::from_str(env, "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC");
+        let native_token_address = Address::from_string(&native_token_str);
+        let native_token_client = token::Client::new(env, &native_token_address);
+        native_token_client.transfer(
+            &env.current_contract_address(),
+            &depositor,
+            &refund_amount,
+        );
     }
 
     escrow_core::save_escrow(env, escrow_id, &escrow);

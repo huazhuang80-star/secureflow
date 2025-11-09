@@ -172,8 +172,15 @@ pub fn approve_milestone(env: &Env, escrow_id: u32, milestone_index: u32, deposi
             &amount,
         );
     } else {
-        // Native XLM transfer would be handled differently
-        // In Soroban, we'd use env.invoker() or similar
+        // Transfer native XLM using Stellar Asset Contract (SAC)
+        let native_token_str = String::from_str(env, "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC");
+        let native_token_address = Address::from_string(&native_token_str);
+        let native_token_client = token::Client::new(env, &native_token_address);
+        native_token_client.transfer(
+            &env.current_contract_address(),
+            &beneficiary_addr,
+            &amount,
+        );
     }
 
     // Update reputation

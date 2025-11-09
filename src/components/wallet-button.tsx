@@ -94,7 +94,7 @@ export function WalletButton() {
               )}
             </div>
 
-            <span>{Number(wallet.balance || 0).toFixed(3)} XLM</span>
+            <span>{Number(wallet.balance || 0).toFixed(4)} XLM</span>
             <span className="text-muted-foreground">·</span>
 
             {/* Dynamic wallet avatar */}
@@ -125,7 +125,7 @@ export function WalletButton() {
             {wallet.address}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            Balance: {Number(wallet.balance || 0).toFixed(4)} XLM
+            Balance: {Number(wallet.balance || 0).toFixed(7)} XLM
           </div>
         </div>
         <DropdownMenuSeparator />

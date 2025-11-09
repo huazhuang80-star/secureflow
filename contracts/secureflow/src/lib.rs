@@ -177,5 +177,10 @@ impl SecureFlow {
     pub fn is_job_creation_paused(env: Env) -> bool {
         admin::is_job_creation_paused(&env)
     }
+
+    /// Get the contract owner
+    pub fn get_owner(env: Env) -> Result<Address, Error> {
+        admin::get_owner(&env)
+    }
 }
 

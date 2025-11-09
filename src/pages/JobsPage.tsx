@@ -32,6 +32,7 @@ export default function JobsPage() {
   const [isContractPaused, setIsContractPaused] = useState(false);
   const [ongoingProjectsCount, setOngoingProjectsCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [totalEscrowsCount, setTotalEscrowsCount] = useState(0); // Actual count from blockchain
 
   const getStatusFromNumber = (
     status: number
@@ -74,27 +75,10 @@ export default function JobsPage() {
 
   const checkContractPauseStatus = async () => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
-      const paused = await contract.call("paused");
-
-      let isPaused = false;
-
-      // Use the same robust parsing logic as admin page
-      if (paused === true || paused === "true" || paused === 1) {
-        isPaused = true;
-      } else if (paused === false || paused === "false" || paused === 0) {
-        isPaused = false;
-      } else if (paused && typeof paused === "object") {
-        try {
-          const pausedValue = paused.toString();
-          isPaused = pausedValue === "true" || pausedValue === "1";
-        } catch (e) {
-          isPaused = false; // Default to not paused
-        }
-      }
-
+      const isPaused = await contractService.isJobCreationPaused();
       setIsContractPaused(isPaused);
     } catch (error) {
+      console.error("Error checking pause status:", error);
       setIsContractPaused(false);
     }
   };
@@ -153,27 +137,21 @@ export default function JobsPage() {
 
   const checkApplicationStatus = async () => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
+      // Skip hasUserApplied check for now as the method doesn't exist in the contract
+      // This prevents the errors in the console
+      // We'll implement this properly later when the contract method is available
       const applicationStatus: Record<string, boolean> = {};
 
       for (const job of jobs) {
-        try {
-          // Check if user has applied to this job
-          const hasUserApplied = await contract.call(
-            "hasUserApplied",
-            job.id,
-            wallet.address
-          );
-          applicationStatus[job.id] = Boolean(hasUserApplied);
-        } catch (error) {
-          // Error checking application status
-          // If we can't check, assume they haven't applied to be safe
-          applicationStatus[job.id] = false;
-        }
+        // For now, assume user hasn't applied to any job
+        // This will be implemented when the contract method is available
+        applicationStatus[job.id] = false;
       }
 
       setHasApplied(applicationStatus);
-    } catch (error) {}
+    } catch (error) {
+      // Silently fail - this is not critical
+    }
   };
 
   const handleRefresh = async () => {
@@ -197,27 +175,35 @@ export default function JobsPage() {
   const fetchOpenJobs = async () => {
     setLoading(true);
     try {
+      // Fetch all data from blockchain via contractService.getEscrow()
+      // This ensures all displayed data is from the blockchain, not mock data
       // Get total number of escrows using contract service
-      // Add timeout to prevent infinite loading
-      const escrowCountPromise = contractService.getNextEscrowId();
-      const timeoutPromise = new Promise<number>((resolve) => {
-        setTimeout(() => {
-          console.warn("getNextEscrowId timed out, using default value");
-          resolve(10); // Default to 10 if timeout
-        }, 10000); // 10 second timeout
-      });
+      // NO TIMEOUT - let it complete fully to get accurate count from blockchain
+      const escrowCount = await contractService.getNextEscrowId();
 
-      const escrowCount = await Promise.race([
-        escrowCountPromise,
-        timeoutPromise,
-      ]);
+      // Set the actual escrow count from blockchain
+      // escrowCount is the next available ID, so actual count is escrowCount - 1
+      const actualCount = Math.max(0, escrowCount - 1);
+      setTotalEscrowsCount(actualCount);
+      console.log(
+        `Total escrows from blockchain: ${actualCount} (next ID: ${escrowCount})`
+      );
 
       const openJobs: Escrow[] = [];
 
       // Fetch open jobs from the contract
-      // Check if there are any escrows created yet (nextEscrowId > 1 means at least one escrow exists)
-      if (escrowCount > 1) {
-        for (let i = 1; i < escrowCount; i++) {
+      // escrowCount is the next available ID, so if it's 2, that means 1 escrow exists
+      // But if it times out and returns 1, we should still check escrow 1 directly
+      // Limit the number of escrows to fetch to prevent long loading times
+      const maxEscrowsToFetch = 20; // Limit to 20 escrows max
+      const escrowsToCheck = Math.min(
+        Math.max(escrowCount - 1, 1),
+        maxEscrowsToFetch
+      );
+
+      // Always check at least escrow 1, even if escrowCount is 1 (might be timeout default)
+      if (escrowsToCheck > 0) {
+        for (let i = 1; i <= escrowsToCheck; i++) {
           try {
             const escrowData = await contractService.getEscrow(i);
             if (!escrowData) {
@@ -240,35 +226,48 @@ export default function JobsPage() {
                 wallet.address?.toLowerCase();
 
               // Check if current user has already applied to this job
-              // For now, we'll skip this check and just display the jobs
-              // Application checking can be added later if needed
+              // Skip the hasUserApplied check for now as it's causing errors
+              // We'll implement this properly later when the contract method is available
               let userHasApplied = false;
               let applicationCount = 0;
 
               // Convert contract data to our Escrow type
+              // All data is from blockchain - fetched via contractService.getEscrow()
               const job: Escrow = {
                 id: i.toString(),
-                payer: escrowData.creator, // depositor/creator
-                beneficiary: escrowData.freelancer || zeroAddress, // beneficiary/freelancer
-                token: escrowData.token || "", // token
-                totalAmount: escrowData.amount, // totalAmount
+                payer: escrowData.creator, // depositor/creator (from blockchain)
+                beneficiary: escrowData.freelancer || zeroAddress, // beneficiary/freelancer (from blockchain)
+                token: escrowData.token || "", // token (from blockchain)
+                totalAmount: escrowData.amount, // totalAmount (from blockchain)
                 releasedAmount: "0", // paidAmount - would need to calculate from milestones
-                status: getStatusFromNumber(escrowData.status), // status
-                createdAt: escrowData.created_at * 1000, // createdAt (convert to milliseconds)
+                status: getStatusFromNumber(escrowData.status), // status (from blockchain)
+                createdAt: escrowData.created_at * 1000, // createdAt (from blockchain, convert to milliseconds)
                 duration: Math.max(
                   0,
                   Math.round(
                     (escrowData.deadline - escrowData.created_at) /
                       (24 * 60 * 60)
                   )
-                ), // Convert seconds to days, ensure non-negative and round to nearest day
+                ), // Convert seconds to days (from blockchain)
                 milestones: [], // Would need to fetch milestones separately
-                projectDescription: escrowData.project_description || "", // projectDescription
+                projectTitle: escrowData.project_title || "", // projectTitle (from blockchain)
+                projectDescription: escrowData.project_description || "", // projectDescription (from blockchain)
                 isOpenJob: true,
                 applications: [], // Would need to fetch applications separately
                 applicationCount: applicationCount, // Add real application count
-                isJobCreator: isJobCreator, // Add flag to track if current user is the job creator
+                isJobCreator: isJobCreator, // Add flag to track if current user is the job creator (from blockchain)
               };
+
+              // Log blockchain data for debugging
+              console.log(`Job ${i} from blockchain:`, {
+                id: job.id,
+                creator: job.payer,
+                amount: job.totalAmount,
+                status: job.status,
+                createdAt: new Date(job.createdAt).toISOString(),
+                projectTitle: job.projectTitle,
+                isJobCreator: job.isJobCreator,
+              });
 
               openJobs.push(job);
 
@@ -285,7 +284,9 @@ export default function JobsPage() {
         }
       }
 
-      // Set the actual jobs from the contract
+      // Set the actual jobs from the blockchain contract
+      // All data in openJobs is fetched directly from the blockchain
+      console.log(`Loaded ${openJobs.length} jobs from blockchain`);
       setJobs(openJobs);
     } catch (error) {
       toast({
@@ -304,6 +305,19 @@ export default function JobsPage() {
     proposedTimeline: string
   ) => {
     if (!job || !wallet.isConnected) return;
+
+    // Check if user is the job creator (should not be able to apply to own job)
+    if (
+      job.isJobCreator ||
+      job.payer?.toLowerCase() === wallet.address?.toLowerCase()
+    ) {
+      toast({
+        title: "Cannot Apply",
+        description: "You cannot apply to a job you created.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Check if freelancer has reached the maximum number of ongoing projects (3)
     if (ongoingProjectsCount >= 3) {
@@ -331,10 +345,14 @@ export default function JobsPage() {
       const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
       if (!contract) return;
 
-      // Double-check with blockchain to prevent duplicate applications
-
+      // Skip hasUserApplied check for now as the method doesn't exist in the contract
+      // This prevents the errors in the console
+      // We'll implement this properly later when the contract method is available
       let userHasApplied = false;
 
+      // For now, we'll skip checking applications as the methods don't exist
+      // This will be implemented when the contract methods are available
+      /*
       try {
         // First try the hasUserApplied function
         const hasUserAppliedResult = await contract.call(
@@ -389,6 +407,7 @@ export default function JobsPage() {
           }
         } catch (altError) {}
       }
+      */
 
       if (userHasApplied) {
         toast({
@@ -480,7 +499,11 @@ export default function JobsPage() {
           onRefresh={handleRefresh}
           refreshing={refreshing}
         />
-        <JobsStats jobs={jobs} ongoingProjectsCount={ongoingProjectsCount} />
+        <JobsStats
+          jobs={jobs}
+          openJobsCount={totalEscrowsCount}
+          ongoingProjectsCount={ongoingProjectsCount}
+        />
 
         {/* Jobs List */}
         <div className="space-y-6">

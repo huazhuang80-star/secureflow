@@ -35,7 +35,7 @@ name = "testnet-user"
 default = true
 
 [staging.contracts]
-secureflow = { id = "CALLYK2XNLXDCSCZSHZT66P7MM2JM6BQIURY2VBPHPGKIH5VPOPNS34Q", client = true }
+secureflow = { id = "CCNNZEAC2IFGQNGVCYUQMQMETXMRAZHMXR6HNMPDR6V7HU3PZ5PFJNCC", client = true }
 
 ### Production environment configuration
 [production.network]

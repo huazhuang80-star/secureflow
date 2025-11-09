@@ -1,5 +1,3 @@
-
-
 import { Card } from "@/components/ui/card";
 import { Briefcase, DollarSign, Clock, User } from "lucide-react";
 
@@ -8,13 +6,18 @@ interface JobsStatsProps {
     totalAmount: string;
     duration: number;
   }>;
+  openJobsCount?: number; // Total escrows from blockchain
   ongoingProjectsCount?: number;
 }
 
-export function JobsStats({ jobs, ongoingProjectsCount = 0 }: JobsStatsProps) {
+export function JobsStats({
+  jobs,
+  openJobsCount,
+  ongoingProjectsCount = 0,
+}: JobsStatsProps) {
   const totalValue = jobs.reduce(
     (sum, job) => sum + Number.parseFloat(job.totalAmount),
-    0,
+    0
   );
   const avgDuration =
     jobs.length > 0
@@ -26,9 +29,9 @@ export function JobsStats({ jobs, ongoingProjectsCount = 0 }: JobsStatsProps) {
       <Card className="glass border-primary/20 p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted-foreground mb-1">Open Jobs</p>
+            <p className="text-sm text-muted-foreground mb-1">Total Escrows</p>
             <p className="text-2xl md:text-3xl font-bold break-all">
-              {jobs.length}
+              {openJobsCount !== undefined ? openJobsCount : jobs.length}
             </p>
           </div>
           <Briefcase className="h-8 w-8 md:h-10 md:w-10 text-primary opacity-50 flex-shrink-0" />

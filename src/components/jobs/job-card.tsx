@@ -1,5 +1,3 @@
-
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +48,7 @@ export function JobCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-3">
               <h3 className="text-xl font-bold">
-                {job.projectDescription || `Job #${job.id}`}
+                {job.projectTitle || job.projectDescription || `Job #${job.id}`}
               </h3>
               <Badge variant="secondary" className="gap-1">
                 <Clock className="h-3 w-3" />
@@ -60,7 +58,7 @@ export function JobCard({
             </div>
 
             <p className="text-muted-foreground mb-4 break-words overflow-hidden">
-              {job.projectDescription}
+              {job.projectDescription || "No description available"}
             </p>
 
             <div className="flex items-center gap-4 text-sm text-muted-foreground">

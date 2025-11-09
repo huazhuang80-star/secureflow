@@ -390,6 +390,9 @@ export default function CreateEscrowPage() {
       });
 
       console.log("Escrow created successfully, ID:", escrowId);
+      console.log(
+        "Check the browser console for transaction hash and StellarExpert link"
+      );
 
       // Navigate after successful creation
       setTimeout(() => {
