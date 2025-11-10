@@ -602,22 +602,33 @@ export default function FreelancerPage() {
     }
 
     try {
+      if (!wallet.address) {
+        toast({
+          title: "Error",
+          description:
+            "Wallet address not found. Please reconnect your wallet.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setSubmittingMilestone(`${escrowId}-${milestoneIndex}`);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
 
       toast({
         title: "Submitting milestone...",
         description: "Submitting transaction to submit your milestone",
       });
 
-      // Stellar: Use direct contract call
-      await contract.send(
-        "submit_milestone",
-        Number(escrowId),
-        milestoneIndex,
-        description,
-        wallet.address // beneficiary parameter
-      );
+      // Use ContractService instead of contract.send - it handles the correct format
+      const { ContractService } = await import("@/lib/web3/contract-service");
+      const contractService = new ContractService(CONTRACTS.SECUREFLOW_ESCROW);
+
+      await contractService.submitMilestone({
+        escrow_id: Number(escrowId),
+        milestone_index: milestoneIndex,
+        description: description,
+        beneficiary: wallet.address,
+      });
 
       // Transaction is already confirmed via waitForConfirmation in web3-context
       // For Stellar, we don't need to poll for receipts like Ethereum
