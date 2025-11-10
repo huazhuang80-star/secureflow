@@ -25,7 +25,7 @@ interface JobWithApplications extends Escrow {
 }
 
 export default function ApprovalsPage() {
-  const { wallet, getContract } = useWeb3();
+  const { wallet } = useWeb3();
   const { toast } = useToast();
   const { isJobCreator, loading: isJobCreatorLoading } = useJobCreatorStatus();
   const { refreshApprovals } = usePendingApprovals();
@@ -206,7 +206,7 @@ export default function ApprovalsPage() {
                 beneficiary:
                   escrow.freelancer ||
                   "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
-                token: escrow.token,
+                token: escrow.token || "native",
                 totalAmount: escrow.amount || "0",
                 releasedAmount: "0", // TODO: Get from escrow if available
                 status: getStatusFromNumber(escrow.status || 0),
@@ -216,7 +216,6 @@ export default function ApprovalsPage() {
                 projectDescription:
                   escrow.project_title ||
                   escrow.project_description ||
-                  escrow.projectDescription ||
                   "No description",
                 isOpenJob: true,
                 applications,
@@ -244,25 +243,61 @@ export default function ApprovalsPage() {
   };
 
   const handleApproveFreelancer = async () => {
+    console.log("[handleApproveFreelancer] Called", {
+      selectedJobForApproval: selectedJobForApproval?.id,
+      selectedFreelancer: selectedFreelancer?.freelancerAddress,
+      walletConnected: wallet.isConnected,
+      walletAddress: wallet.address,
+    });
+
     if (!selectedJobForApproval || !selectedFreelancer || !wallet.isConnected) {
+      console.error("[handleApproveFreelancer] Missing required data:", {
+        selectedJobForApproval: !!selectedJobForApproval,
+        selectedFreelancer: !!selectedFreelancer,
+        walletConnected: wallet.isConnected,
+      });
+      toast({
+        title: "Error",
+        description: "Missing required information. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!wallet.address) {
+      console.error("[handleApproveFreelancer] Wallet address is missing");
+      toast({
+        title: "Error",
+        description: "Wallet address not found. Please reconnect your wallet.",
+        variant: "destructive",
+      });
       return;
     }
 
     setApproving(true);
 
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
+      console.log("[handleApproveFreelancer] Starting approval process...");
+      // Use ContractService instead of contract.send - it handles address conversion and auth properly
+      const { ContractService } = await import("@/lib/web3/contract-service");
+      const contractService = new ContractService(CONTRACTS.SECUREFLOW_ESCROW);
 
-      if (!contract) {
-        throw new Error("Contract instance not found");
-      }
-
-      await contract.send(
-        "accept_freelancer",
-        "no-value",
-        Number(selectedJobForApproval.id),
-        selectedFreelancer.freelancerAddress
+      console.log(
+        "[handleApproveFreelancer] Calling contractService.acceptFreelancer...",
+        {
+          escrow_id: Number(selectedJobForApproval.id),
+          freelancer: selectedFreelancer.freelancerAddress,
+          depositor: wallet.address,
+        }
       );
+
+      await contractService.acceptFreelancer({
+        escrow_id: Number(selectedJobForApproval.id),
+        freelancer: selectedFreelancer.freelancerAddress,
+        depositor: wallet.address,
+      });
+
+      console.log("[handleApproveFreelancer] Transaction successful!");
 
       toast({
         title: "Freelancer Approved",
@@ -306,6 +341,7 @@ export default function ApprovalsPage() {
       setLoading(true);
       setTimeout(() => setLoading(false), 100);
     } catch (error) {
+      console.error("[handleApproveFreelancer] Error:", error);
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 

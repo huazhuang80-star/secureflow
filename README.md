@@ -1,10 +1,29 @@
-# Scaffold Stellar Frontend
+# SecureFlow
 
-_To get started with Scaffold Stellar, visit its repo: [github.com/AhaLabs/scaffold-stellar](https://github.com/AhaLabs/scaffold-stellar)._
+A decentralized freelancer marketplace built on Stellar (Soroban) that provides secure, trustless escrow services for freelance work agreements.
 
-_Under active development._
+## About SecureFlow
 
-A modern, up-to-date toolkit for building Stellar smart contract frontends.
+SecureFlow is a blockchain-powered platform that connects freelancers with clients through smart contract escrow. It ensures secure payments, milestone-based work tracking, and built-in dispute resolution, all running on the Stellar network.
+
+### Key Features
+
+- 🔒 **Smart Contract Escrow**: Funds are secured in blockchain escrow until milestones are approved
+- 📋 **Milestone-Based Payments**: Break projects into milestones with automatic payment releases
+- 💼 **Job Marketplace**: Post jobs, review applications, and select freelancers
+- ⚖️ **Dispute Resolution**: Multi-arbiter system for fair conflict resolution
+- 💰 **Refund Protection**: Automatic refunds after deadlines with emergency mechanisms
+- ⭐ **Reputation System**: Build trust through on-chain reputation scores
+
+## Team
+
+**Solo Project** - This is an independent project developed by a single developer.
+
+---
+
+## Technical Details
+
+_This project is built using [Scaffold Stellar](https://github.com/AhaLabs/scaffold-stellar), a modern toolkit for building Stellar smart contract frontends._
 
 - ⚡️ Vite + React + TypeScript
 - 🔗 Auto-generated contract clients
@@ -55,7 +74,7 @@ Have a look at `environments.toml` for more fined-grained control.
 npm run dev
 ```
 
-Open the server URL in your web browser. 
+Open the server URL in your web browser.
 
 4. For testnet/mainnet deployment:
 

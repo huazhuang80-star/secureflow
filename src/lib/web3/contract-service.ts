@@ -1939,12 +1939,19 @@ export class ContractService {
     freelancer: string;
     depositor: string;
   }): Promise<string> {
-    const { address } = useWalletStore.getState();
-    if (!address) {
-      throw new Error("Wallet not connected");
+    // Use the depositor address from params - it's already the wallet address from the component
+    // Don't rely on useWalletStore which might be out of sync
+    if (!params.depositor) {
+      throw new Error("Depositor address is required");
     }
 
-    const walletAddress = address;
+    const walletAddress = params.depositor;
+    const depositorAddress = params.depositor;
+
+    console.log(
+      "[acceptFreelancer] Using depositor address:",
+      depositorAddress
+    );
 
     try {
       const assembledTx = await this.client.accept_freelancer({
@@ -1953,7 +1960,13 @@ export class ContractService {
         depositor: params.depositor,
       });
 
-      return await this.sendTransactionWithAuth(assembledTx, walletAddress);
+      // Pass depositorAddress as sourceAddress so the depositor signs auth entries
+      // Both walletAddress and depositorAddress are the same (the depositor)
+      return await this.sendTransactionWithAuth(
+        assembledTx,
+        walletAddress,
+        depositorAddress
+      );
     } catch (error: any) {
       console.error("Error accepting freelancer:", error);
       throw error;
@@ -2399,11 +2412,18 @@ export class ContractService {
     walletAddress: string,
     sourceAddress?: string
   ): Promise<string> {
+    console.log("[sendTransactionWithAuth] Called", {
+      walletAddress,
+      sourceAddress,
+      hasAssembledTx: !!assembledTx,
+    });
+
     // Simulate to check for errors and get auth entries
     const tx = TransactionBuilder.fromXDR(
       assembledTx.toXDR(),
       this.network.networkPassphrase
     );
+    console.log("[sendTransactionWithAuth] Transaction built from XDR");
 
     // If sourceAddress is provided, rebuild the transaction with that source account
     // This is needed when the depositor is different from the invoker
@@ -2434,10 +2454,16 @@ export class ContractService {
           : []
         : [];
 
+    console.log("[sendTransactionWithAuth] Simulation complete", {
+      hasAuthEntries: authEntries.length > 0,
+      authEntriesCount: authEntries.length,
+    });
+
     // Check if simulation failed
     if ("errorResult" in simulation && simulation.errorResult) {
       const errorValue =
         (simulation.errorResult as any).value?.() || simulation.errorResult;
+      console.error("[sendTransactionWithAuth] Simulation failed:", errorValue);
       throw new Error(
         `Transaction simulation failed: ${errorValue.toString()}`
       );
@@ -2453,10 +2479,17 @@ export class ContractService {
       // Use sourceAddress if provided, otherwise use walletAddress
       // For create_escrow, we need to sign auth entries for the depositor
       const authSignerAddress = sourceAddress || walletAddress;
+      console.log("[sendTransactionWithAuth] Signing auth entries", {
+        authSignerAddress,
+        authEntriesCount: authEntries.length,
+      });
       const signedAuthEntries = await signAuthEntries(
         authEntries as any[],
         authSignerAddress
       );
+      console.log("[sendTransactionWithAuth] Auth entries signed", {
+        signedCount: signedAuthEntries.length,
+      });
       // Rebuild transaction with signed auth entries
       const { xdr } = await import("@stellar/stellar-sdk");
       const parsedSignedAuth = signedAuthEntries.map((signed: string) =>
@@ -2515,10 +2548,17 @@ export class ContractService {
     // No auth entries, sign normally
     // Use sourceAddress if provided, otherwise use walletAddress
     const signerAddress = sourceAddress || walletAddress;
+    console.log(
+      "[sendTransactionWithAuth] Signing transaction (no auth entries)",
+      {
+        signerAddress,
+      }
+    );
     const signedTxXdr = await signTransaction({
       unsignedTransaction: prepared.toXDR(),
       address: signerAddress,
     });
+    console.log("[sendTransactionWithAuth] Transaction signed, sending...");
 
     const signedTransaction = TransactionBuilder.fromXDR(
       signedTxXdr,

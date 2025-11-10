@@ -56,10 +56,10 @@ export function useJobCreatorStatus() {
 
           console.log(`📦 Escrow ${i} found:`, escrow);
 
-          // Extract depositor/creator address from escrow
-          // EscrowData has a 'creator' field (not 'depositor')
-          const depositorAddress = escrow.creator || escrow.depositor;
-          console.log(`📦 Escrow ${i} creator/depositor:`, depositorAddress);
+          // Extract creator address from escrow
+          // EscrowData has a 'creator' field
+          const depositorAddress = escrow.creator;
+          console.log(`📦 Escrow ${i} creator:`, depositorAddress);
           console.log(`📦 Wallet address:`, wallet.address);
 
           // Check if current user is the creator (job creator)
