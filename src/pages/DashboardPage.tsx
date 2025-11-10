@@ -75,20 +75,6 @@ export default function DashboardPage() {
   //   );
   // };
 
-  const getMilestoneStatusFromNumber = (status: number): string => {
-    const statuses = [
-      "pending", // 0 - NotStarted
-      "submitted", // 1 - Submitted
-      "approved", // 2 - Approved
-      "disputed", // 3 - Disputed
-      "resolved", // 4 - Resolved
-      "rejected", // 5 - Rejected
-    ];
-    const mappedStatus = statuses[status] || "pending";
-
-    return mappedStatus;
-  };
-
   const calculateDaysLeft = (createdAt: number, duration: number): number => {
     const now = Date.now();
     // Duration is already in seconds from the contract, convert to milliseconds
@@ -210,7 +196,7 @@ export default function DashboardPage() {
 
             // Fetch milestones for this escrow
             const milestonesData = await contractService.getMilestones(i);
-            const milestones = milestonesData.map((m: any, index: number) => {
+            const milestones = milestonesData.map((m: any) => {
               // Convert milestone status number to string
               const statusNumber = m.status || 0;
               const statusMap: Record<

@@ -346,25 +346,26 @@ export default function FreelancerPage() {
 
   const startWork = async (escrowId: string) => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
-
-      // Get escrow details to debug
-      // try {
-      //   const escrowSummary = await contract.call( // Unused
-      //     "get_escrow",
-      //     Number(escrowId)
-      //   );
-      // } catch (debugError) {
-      //   console.error("Failed to get escrow details:", debugError);
-      // }
+      if (!wallet.address) {
+        toast({
+          title: "Error",
+          description:
+            "Wallet address not found. Please reconnect your wallet.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Starting work...",
         description: "Submitting transaction to start work on this escrow",
       });
 
-      // Stellar: Use direct contract call
-      await contract.send("start_work", Number(escrowId), wallet.address);
+      // Use ContractService instead of contract.send - it handles the correct format
+      const { ContractService } = await import("@/lib/web3/contract-service");
+      const contractService = new ContractService(CONTRACTS.SECUREFLOW_ESCROW);
+
+      await contractService.startWork(Number(escrowId), wallet.address);
 
       toast({
         title: "Work started!",
