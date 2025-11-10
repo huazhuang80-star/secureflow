@@ -9,7 +9,7 @@ import { CONTRACTS } from "@/lib/web3/config";
 import { motion } from "framer-motion";
 
 export default function HomePage() {
-  const { wallet, getContract } = useWeb3();
+  const { wallet } = useWeb3();
   const [stats, setStats] = useState({
     activeEscrows: 0,
     totalVolume: "0",
