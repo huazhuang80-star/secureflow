@@ -28,72 +28,61 @@ export default function HomePage() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
 
-      // Get total number of escrows
-      // Note: Stellar contract doesn't have next_escrow_id method
-      // We need to iterate through escrows or use a different approach
-      // For now, we'll try to get escrows for the current user and estimate
-      let escrowCount = 0;
-      try {
-        if (wallet.address) {
-          const userEscrows = await contract.call(
-            "get_user_escrows",
-            wallet.address
-          );
-          escrowCount = userEscrows ? userEscrows.length : 0;
-        }
-      } catch (error) {
-        // If we can't get user escrows, set to 0
-        escrowCount = 0;
-      }
+      // Use ContractService instead of contract.call - it reads from blockchain
+      const { ContractService } = await import("@/lib/web3/contract-service");
+      const contractService = new ContractService(CONTRACTS.SECUREFLOW_ESCROW);
+
+      // Get next escrow ID from blockchain (not hardcoded)
+      const nextEscrowId = await contractService.getNextEscrowId();
+      console.log(`[HomePage] next_escrow_id from blockchain: ${nextEscrowId}`);
 
       let activeEscrows = 0;
       let completedEscrows = 0;
       let totalVolume = 0;
 
-      // Note: Milestones are part of EscrowData, no separate method needed
+      // Fetch all escrows from the contract to calculate stats
+      // Check up to 20 escrows (reasonable limit)
+      const maxEscrowsToCheck = Math.min(nextEscrowId - 1, 20);
+      for (let i = 1; i <= maxEscrowsToCheck; i++) {
+        try {
+          console.log(`[HomePage] Checking escrow ${i} for stats...`);
+          const escrowData = await contractService.getEscrow(i);
 
-      // Count escrows by status
-      // Get all user escrows and iterate through them
-      if (wallet.address && escrowCount > 0) {
-        const userEscrows = await contract.call(
-          "get_user_escrows",
-          wallet.address
-        );
-        if (userEscrows && Array.isArray(userEscrows)) {
-          for (const escrowId of userEscrows) {
-            try {
-              const escrowData = await contract.call(
-                "get_escrow",
-                Number(escrowId)
-              );
-              if (!escrowData) continue;
-
-              // EscrowData structure: (depositor, beneficiary, arbiters, required_confirmations, token, total_amount, paid_amount, platform_fee, deadline, status, work_started, created_at, milestone_count, is_open_job, project_title, project_description)
-              const status = escrowData.status || escrowData[9]; // status field
-              const totalAmount = Number(
-                escrowData.total_amount || escrowData[5]
-              ); // total_amount field
-
-              // Add to total volume (convert from stroops to XLM - 7 decimals)
-              totalVolume += totalAmount / 1e7;
-
-              // EscrowStatus enum: Pending=0, InProgress=1, Released=2, Refunded=3, Disputed=4, Expired=5
-              if (status === 1 || status === "InProgress") {
-                // Active escrow
-                activeEscrows++;
-              } else if (status === 2 || status === "Released") {
-                // Completed
-                completedEscrows++;
-              }
-            } catch (error) {
-              // Skip escrows that don't exist
-              continue;
-            }
+          if (!escrowData) {
+            continue;
           }
+
+          // Get status and total amount
+          const status = escrowData.status || 0;
+          const totalAmount = Number(escrowData.amount || "0");
+
+          // Add to total volume (convert from stroops to XLM - 7 decimals)
+          totalVolume += totalAmount / 1e7;
+
+          // EscrowStatus enum: Pending=0, InProgress=1, Released=2, Refunded=3, Disputed=4, Expired=5
+          if (status === 1) {
+            // InProgress - Active escrow
+            activeEscrows++;
+          } else if (status === 2) {
+            // Released - Completed
+            completedEscrows++;
+          }
+        } catch (error) {
+          console.error(
+            `[HomePage] Error checking escrow ${i} for stats:`,
+            error
+          );
+          // Skip escrows that don't exist
+          continue;
         }
       }
+
+      console.log(`[HomePage] Stats calculated:`, {
+        activeEscrows,
+        completedEscrows,
+        totalVolume: totalVolume.toFixed(2),
+      });
 
       setStats({
         activeEscrows,
@@ -101,6 +90,7 @@ export default function HomePage() {
         completedEscrows,
       });
     } catch (error) {
+      console.error("[HomePage] Error fetching stats:", error);
       // Set empty stats if contract call fails
       setStats({
         activeEscrows: 0,

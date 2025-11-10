@@ -1893,12 +1893,15 @@ export class ContractService {
   }
 
   async startWork(escrowId: number, beneficiary: string): Promise<string> {
-    const { address } = useWalletStore.getState();
-    if (!address) {
-      throw new Error("Wallet not connected");
+    // Use the beneficiary address from params - it's already the wallet address from the component
+    // Don't rely on useWalletStore which might be out of sync
+    if (!beneficiary) {
+      throw new Error("Beneficiary address is required");
     }
 
-    const walletAddress = address;
+    const walletAddress = beneficiary;
+
+    console.log("[startWork] Using beneficiary address:", beneficiary);
 
     try {
       const assembledTx = await this.client.start_work({
