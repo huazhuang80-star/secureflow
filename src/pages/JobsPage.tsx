@@ -345,7 +345,7 @@ export default function JobsPage() {
               // Store application status from blockchain check
               setHasApplied((prev) => {
                 const newState = {
-                  ...prev,
+                ...prev,
                   [job.id]: userHasApplied, // Always use blockchain result
                 };
                 console.log(
@@ -430,8 +430,8 @@ export default function JobsPage() {
         try {
           const hasAppliedResult = await contractService.hasUserApplied(
             Number.parseInt(job.id, 10),
-            wallet.address
-          );
+          wallet.address
+        );
           userHasApplied = hasAppliedResult;
           console.log(
             `[handleApply] User ${wallet.address} has applied to job ${job.id}:`,
@@ -564,15 +564,15 @@ export default function JobsPage() {
                 hasApplied
               );
               return (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  index={index}
+              <JobCard
+                key={job.id}
+                job={job}
+                index={index}
                   hasApplied={jobHasApplied}
-                  isContractPaused={isContractPaused}
-                  ongoingProjectsCount={ongoingProjectsCount}
-                  onApply={setSelectedJob}
-                />
+                isContractPaused={isContractPaused}
+                ongoingProjectsCount={ongoingProjectsCount}
+                onApply={setSelectedJob}
+              />
               );
             })
           )}

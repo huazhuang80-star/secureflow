@@ -582,6 +582,88 @@ export class ContractService {
   }
 
   /**
+   * Get milestones for an escrow
+   */
+  async getMilestones(escrowId: number): Promise<any[]> {
+    try {
+      const contract = new Contract(this.contractId);
+      const sourceAddress =
+        useWalletStore.getState().address ||
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+
+      const sourceAccount = {
+        accountId: () => sourceAddress,
+        sequenceNumber: () => "0",
+        incrementSequenceNumber: () => {},
+      } as any;
+
+      const tx = new TransactionBuilder(sourceAccount, {
+        fee: "100",
+        networkPassphrase: this.network.networkPassphrase,
+      })
+        .addOperation(
+          contract.call(
+            "get_milestones",
+            nativeToScVal(escrowId, { type: "u32" })
+          )
+        )
+        .setTimeout(30)
+        .build();
+
+      const simulation = await this.rpcServer.simulateTransaction(tx);
+
+      // Check for errors first
+      if ("errorResult" in simulation && simulation.errorResult) {
+        const errorValue =
+          (simulation.errorResult as any).value?.() || simulation.errorResult;
+        console.warn(
+          `[getMilestones] Contract get_milestones simulation error:`,
+          errorValue
+        );
+        return [];
+      }
+
+      // Get the return value from simulation
+      let returnValue: any = null;
+      if ("returnValue" in simulation && simulation.returnValue) {
+        returnValue = simulation.returnValue;
+      } else if ("result" in simulation && (simulation as any).result) {
+        const result = (simulation as any).result;
+        if (result.retval) {
+          returnValue = result.retval;
+        } else {
+          returnValue = result;
+        }
+      }
+
+      if (returnValue) {
+        try {
+          const result = scValToNative(returnValue as xdr.ScVal);
+          if (Array.isArray(result)) {
+            return result.map((m: any) => ({
+              description: m.description || m[0] || "",
+              amount: m.amount || m[1] || "0",
+              status: m.status || m[2] || 0,
+              submitted_at: m.submitted_at || m[3] || 0,
+              approved_at: m.approved_at || m[4] || 0,
+              disputed_at: m.disputed_at || m[5] || 0,
+              disputed_by: m.disputed_by || m[6] || undefined,
+              dispute_reason: m.dispute_reason || m[7] || undefined,
+            }));
+          }
+        } catch (e) {
+          console.warn(`[getMilestones] Error parsing return value:`, e);
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error getting milestones:", error);
+      return [];
+    }
+  }
+
+  /**
    * Check if a user has applied to a job by reading applications from storage
    */
   async hasUserApplied(

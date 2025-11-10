@@ -9,7 +9,7 @@ import {
   createEscrowNotification,
   createMilestoneNotification,
 } from "@/contexts/notification-context";
-import type { Escrow, Milestone } from "@/lib/web3/types";
+import type { Escrow } from "@/lib/web3/types";
 // import { motion } from "framer-motion"; // Unused
 import {
   Wallet,
@@ -121,219 +121,6 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchMilestones = async (
-    contract: any,
-    escrowId: number,
-    escrowSummary?: any
-  ) => {
-    try {
-      // Get milestone count from escrow summary first
-      const milestoneCount = Number(escrowSummary[11]) || 0;
-
-      // Always try to fetch individual milestones to get accurate data
-
-      const allMilestones = [];
-
-      for (let j = 0; j < milestoneCount; j++) {
-        try {
-          const individualMilestone = await contract.call(
-            "milestones",
-            escrowId,
-            j
-          );
-
-          allMilestones.push(individualMilestone);
-        } catch (error) {
-          // Only create placeholder if we absolutely can't fetch the data
-          allMilestones.push({
-            description: `Milestone ${j + 1} - To be defined`,
-            amount: "0",
-            status: 0, // pending
-            submittedAt: 0,
-            approvedAt: 0,
-          });
-        }
-      }
-
-      if (allMilestones.length > 0) {
-        return allMilestones.map((m: any, index: number) => {
-          try {
-            // Handle milestone data structure from get_escrow
-            let description = "";
-            let amount = "0";
-            let status = 0;
-            let submittedAt = undefined;
-            let approvedAt = undefined;
-            let disputeReason = "";
-            let rejectionReason = "";
-
-            if (m && typeof m === "object") {
-              try {
-                // Check if this is a placeholder milestone
-                if (m.description && m.description.includes("To be defined")) {
-                  // This is a placeholder milestone
-                  description = m.description;
-                  amount = m.amount || "0";
-                  status = m.status || 0;
-                  submittedAt = m.submittedAt || undefined;
-                  approvedAt = m.approvedAt || undefined;
-                } else {
-                  // This is a real milestone from the contract
-                  // Handle Proxy(Result) objects properly
-                  try {
-                    // Try direct field access first (for struct fields)
-                    if (m.description !== undefined) {
-                      description = String(m.description);
-                    } else if (m[0] !== undefined) {
-                      description = String(m[0]);
-                    } else {
-                      description = `Milestone ${index + 1}`;
-                    }
-
-                    if (m.amount !== undefined) {
-                      amount = String(m.amount);
-                    } else if (m[1] !== undefined) {
-                      amount = String(m[1]);
-                    } else {
-                      amount = "0";
-                    }
-
-                    if (m.status !== undefined) {
-                      status = Number(m.status) || 0;
-                    } else if (m[2] !== undefined) {
-                      status = Number(m[2]) || 0;
-                    } else {
-                      status = 0;
-                    }
-
-                    if (
-                      m.submittedAt !== undefined &&
-                      Number(m.submittedAt) > 0
-                    ) {
-                      submittedAt = Number(m.submittedAt) * 1000;
-                    } else if (m[3] !== undefined && Number(m[3]) > 0) {
-                      submittedAt = Number(m[3]) * 1000;
-                    }
-
-                    if (
-                      m.approvedAt !== undefined &&
-                      Number(m.approvedAt) > 0
-                    ) {
-                      approvedAt = Number(m.approvedAt) * 1000;
-                    } else if (m[4] !== undefined && Number(m[4]) > 0) {
-                      approvedAt = Number(m[4]) * 1000;
-                    }
-
-                    // Parse dispute reason (index 7 in contract)
-                    if (m.disputeReason !== undefined) {
-                      disputeReason = String(m.disputeReason);
-                    } else if (m[7] !== undefined) {
-                      disputeReason = String(m[7]);
-                    }
-
-                    // Parse rejection reason (also index 7 in contract)
-                    if (m.rejectionReason !== undefined) {
-                      rejectionReason = String(m.rejectionReason);
-                    } else if (m[7] !== undefined) {
-                      rejectionReason = String(m[7]);
-                    }
-
-                    // Debug amount conversion
-                    // const amountInTokens = (Number(amount) / 1e7).toFixed(2); // Unused
-                  } catch (proxyError) {
-                    // Fallback to basic parsing
-                    description = `Milestone ${index + 1}`;
-                    amount = "0";
-                    status = 0;
-                  }
-                }
-              } catch (e) {
-                description = `Milestone ${index + 1}`;
-                amount = "0";
-                status = 0;
-              }
-            } else {
-              // Fallback for unexpected structure
-              description = `Milestone ${index + 1}`;
-              amount = "0";
-              status = 0;
-            }
-
-            // Determine the actual status based on timestamps and status
-            let finalStatus = getMilestoneStatusFromNumber(status);
-
-            // Check if this is a placeholder milestone
-            const isPlaceholder =
-              description && description.includes("To be defined");
-
-            if (isPlaceholder) {
-              // For placeholder milestones, determine status based on previous milestones
-              if (index === 0) {
-                finalStatus = "pending";
-              } else {
-                // Check if previous milestone is approved
-                finalStatus = "pending";
-              }
-            } else {
-              // Priority 1: Use contract status as the primary source of truth
-              if (status === 1) {
-                finalStatus = "submitted";
-              } else if (status === 2) {
-                finalStatus = "approved";
-              } else if (status === 3) {
-                finalStatus = "disputed";
-              } else if (status === 4) {
-                finalStatus = "resolved";
-              } else if (status === 5) {
-                finalStatus = "rejected";
-              }
-              // Priority 2: Fallback to timestamp-based logic if status is 0
-              else if (status === 0) {
-                if (approvedAt && approvedAt > 0) {
-                  finalStatus = "approved";
-                } else if (submittedAt && submittedAt > 0) {
-                  finalStatus = "submitted";
-                } else {
-                  finalStatus = "pending";
-                }
-              }
-              // Special case: If this is the first milestone and funds have been released, it should be approved
-              else if (
-                index === 0 &&
-                escrowSummary[5] &&
-                Number(escrowSummary[5]) > 0
-              ) {
-                finalStatus = "approved";
-              }
-              // Otherwise use the parsed status
-              else {
-              }
-            }
-
-            return {
-              description,
-              amount,
-              status: finalStatus,
-              submittedAt,
-              approvedAt,
-              disputeReason,
-              rejectionReason,
-            };
-          } catch (error) {
-            return {
-              description: `Milestone ${index + 1}`,
-              amount: "0",
-              status: "pending",
-            };
-          }
-        });
-      }
-      return [];
-    } catch (error) {
-      return [];
-    }
-  };
-
   useEffect(() => {
     if (wallet.isConnected) {
       fetchUserEscrows();
@@ -343,67 +130,178 @@ export default function DashboardPage() {
   const fetchUserEscrows = async () => {
     setLoading(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
+      if (!wallet.isConnected || !wallet.address) {
+        setEscrows([]);
+        setLoading(false);
+        return;
+      }
 
-      // Get total number of escrows
-      const totalEscrows = await contract.call("next_escrow_id");
-      const escrowCount = Number(totalEscrows);
+      // Use ContractService instead of contract.call - it reads from blockchain
+      const { ContractService } = await import("@/lib/web3/contract-service");
+      const contractService = new ContractService(CONTRACTS.SECUREFLOW_ESCROW);
+
+      // Get next escrow ID from blockchain (not hardcoded)
+      const nextEscrowId = await contractService.getNextEscrowId();
+      console.log(
+        `[DashboardPage] next_escrow_id from blockchain: ${nextEscrowId}`
+      );
 
       const userEscrows: Escrow[] = [];
 
+      // Get current ledger sequence once (needed for timestamp conversion)
+      let currentLedger = 0;
+      try {
+        const { rpc } = await import("@stellar/stellar-sdk");
+        const { getCurrentNetwork } = await import("@/lib/web3/stellar-config");
+        const network = getCurrentNetwork();
+        const rpcServer = new rpc.Server(network.rpcUrl);
+        const latestLedger = await rpcServer.getLatestLedger();
+        currentLedger = latestLedger.sequence;
+      } catch (error) {
+        console.warn(
+          "Could not fetch current ledger, using approximate timestamp:",
+          error
+        );
+        // Fallback: use current time as approximation
+        const SECONDS_PER_LEDGER = 5;
+        currentLedger = Math.floor(Date.now() / 1000 / SECONDS_PER_LEDGER);
+      }
+
       // Fetch user's escrows from the contract
       // Check if there are any escrows created yet (nextEscrowId > 1 means at least one escrow exists)
-      if (escrowCount > 1) {
-        for (let i = 1; i < escrowCount; i++) {
-          try {
-            const escrowSummary = await contract.call("get_escrow", i);
+      const maxEscrowsToCheck = Math.min(nextEscrowId - 1, 20);
+      for (let i = 1; i <= maxEscrowsToCheck; i++) {
+        try {
+          console.log(`[DashboardPage] Checking escrow ${i}...`);
+          const escrowData = await contractService.getEscrow(i);
 
-            // Check if user is involved in this escrow
-            // getEscrowSummary returns indexed properties: [depositor, beneficiary, arbiters, status, totalAmount, paidAmount, remaining, token, deadline, workStarted, createdAt, milestoneCount, isOpenJob, projectTitle, projectDescription]
-            const isPayer =
-              escrowSummary[0].toLowerCase() === wallet.address?.toLowerCase();
-            const isBeneficiary =
-              escrowSummary[1].toLowerCase() === wallet.address?.toLowerCase();
-
-            // Show escrows for both clients and freelancers, but with different functionality
-            if (isPayer || isBeneficiary) {
-              // Convert contract data to our Escrow type
-              const escrow: Escrow = {
-                id: i.toString(),
-                payer: escrowSummary[0], // depositor
-                beneficiary: escrowSummary[1], // beneficiary
-                isClient: isPayer, // Track if current user is the client (payer)
-                isFreelancer: isBeneficiary, // Track if current user is the freelancer (beneficiary)
-                token: escrowSummary[7], // token
-                totalAmount: escrowSummary[4].toString(), // totalAmount
-                releasedAmount: escrowSummary[5].toString(), // paidAmount
-                status: getStatusFromNumber(Number(escrowSummary[3])) as
-                  | "pending"
-                  | "active"
-                  | "completed"
-                  | "disputed", // status
-                createdAt: Number(escrowSummary[10]) * 1000, // createdAt (convert to milliseconds)
-                duration: Number(escrowSummary[8]) - Number(escrowSummary[10]), // deadline - createdAt (in seconds)
-                milestones: (await fetchMilestones(
-                  contract,
-                  i,
-                  escrowSummary
-                )) as Milestone[], // Fetch milestones from contract and assert correct type
-                projectDescription: escrowSummary[13] || "", // projectTitle
-              };
-
-              userEscrows.push(escrow);
-            }
-          } catch (error) {
-            // Skip escrows that don't exist or user doesn't have access to
+          if (!escrowData) {
+            console.log(`[DashboardPage] Escrow ${i} does not exist`);
             continue;
           }
+
+          // Check if user is involved in this escrow
+          const isPayer =
+            escrowData.creator &&
+            escrowData.creator.toLowerCase().trim() ===
+              wallet.address.toLowerCase().trim();
+          const isBeneficiary =
+            escrowData.freelancer &&
+            escrowData.freelancer.toLowerCase().trim() ===
+              wallet.address.toLowerCase().trim();
+
+          console.log(
+            `[DashboardPage] Escrow ${i} - isPayer: ${isPayer}, isBeneficiary: ${isBeneficiary}`
+          );
+
+          // Show escrows for both clients and freelancers, but with different functionality
+          if (isPayer || isBeneficiary) {
+            // Convert ledger sequence to approximate timestamp
+            const SECONDS_PER_LEDGER = 5;
+            const createdAtLedger = escrowData.created_at || 0;
+            const ledgersAgo = currentLedger - createdAtLedger;
+            const secondsAgo = ledgersAgo * SECONDS_PER_LEDGER;
+            const approxCreatedAt = Date.now() - secondsAgo * 1000;
+
+            // Calculate duration in seconds (deadline - created_at are both ledger sequences)
+            const deadlineLedger = escrowData.deadline || 0;
+            const durationInSeconds =
+              (deadlineLedger - createdAtLedger) * SECONDS_PER_LEDGER;
+
+            // Fetch milestones for this escrow
+            const milestonesData = await contractService.getMilestones(i);
+            const milestones = milestonesData.map((m: any, index: number) => {
+              // Convert milestone status number to string
+              const statusNumber = m.status || 0;
+              const statusMap: Record<
+                number,
+                | "pending"
+                | "submitted"
+                | "approved"
+                | "rejected"
+                | "disputed"
+                | "resolved"
+              > = {
+                0: "pending",
+                1: "submitted",
+                2: "approved",
+                3: "disputed",
+                4: "resolved",
+                5: "rejected",
+              };
+              const status = statusMap[statusNumber] || "pending";
+
+              // Convert ledger sequences to timestamps
+              const SECONDS_PER_LEDGER = 5;
+              const submittedAtLedger = m.submitted_at || 0;
+              const approvedAtLedger = m.approved_at || 0;
+              const submittedAt =
+                submittedAtLedger > 0
+                  ? Date.now() -
+                    (currentLedger - submittedAtLedger) *
+                      SECONDS_PER_LEDGER *
+                      1000
+                  : undefined;
+              const approvedAt =
+                approvedAtLedger > 0
+                  ? Date.now() -
+                    (currentLedger - approvedAtLedger) *
+                      SECONDS_PER_LEDGER *
+                      1000
+                  : undefined;
+
+              return {
+                description: m.description || "",
+                amount: m.amount?.toString() || "0",
+                status,
+                submittedAt,
+                approvedAt,
+                disputeReason: m.dispute_reason || undefined,
+                rejectionReason: undefined,
+              };
+            });
+
+            // Convert contract data to our Escrow type
+            const escrow: Escrow = {
+              id: i.toString(),
+              payer: escrowData.creator || "",
+              beneficiary: escrowData.freelancer || "",
+              isClient: isPayer ? true : undefined, // Track if current user is the client (payer)
+              isFreelancer: isBeneficiary ? true : undefined, // Track if current user is the freelancer (beneficiary)
+              token: escrowData.token || "native",
+              totalAmount: escrowData.amount || "0",
+              releasedAmount: "0", // TODO: Get from escrow if available
+              status: getStatusFromNumber(escrowData.status || 0) as
+                | "pending"
+                | "active"
+                | "completed"
+                | "disputed",
+              createdAt: approxCreatedAt, // Approximate timestamp from ledger sequence
+              duration: durationInSeconds, // Duration in seconds
+              milestones,
+              projectDescription:
+                escrowData.project_title ||
+                escrowData.project_description ||
+                "",
+            };
+
+            userEscrows.push(escrow);
+            console.log(`[DashboardPage] Added escrow ${i} to user escrows`);
+          }
+        } catch (error) {
+          console.error(`[DashboardPage] Error checking escrow ${i}:`, error);
+          // Skip escrows that don't exist or user doesn't have access to
+          continue;
         }
       }
 
+      console.log(
+        `[DashboardPage] Found ${userEscrows.length} escrows for user`
+      );
       // Set the actual escrows from the contract
       setEscrows(userEscrows);
     } catch (error) {
+      console.error("[DashboardPage] Error fetching escrows:", error);
       toast({
         title: "Failed to load escrows",
         description: "Could not fetch your escrows from the blockchain",
