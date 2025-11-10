@@ -196,56 +196,129 @@ export default function DashboardPage() {
 
             // Fetch milestones for this escrow
             const milestonesData = await contractService.getMilestones(i);
-            const milestones = milestonesData.map((m: any) => {
-              // Convert milestone status number to string
-              const statusNumber = m.status || 0;
-              const statusMap: Record<
-                number,
-                | "pending"
-                | "submitted"
-                | "approved"
-                | "rejected"
-                | "disputed"
-                | "resolved"
-              > = {
-                0: "pending",
-                1: "submitted",
-                2: "approved",
-                3: "disputed",
-                4: "resolved",
-                5: "rejected",
-              };
-              const status = statusMap[statusNumber] || "pending";
+            const milestones = milestonesData.map(
+              (m: any, milestoneIndex: number) => {
+                // Convert milestone status to number first (might be string enum or number)
+                let statusNumber = 0;
+                const rawStatus = m.status || m[2] || 0;
 
-              // Convert ledger sequences to timestamps
-              const SECONDS_PER_LEDGER = 5;
-              const submittedAtLedger = m.submitted_at || 0;
-              const approvedAtLedger = m.approved_at || 0;
-              const submittedAt =
-                submittedAtLedger > 0
-                  ? Date.now() -
-                    (currentLedger - submittedAtLedger) *
-                      SECONDS_PER_LEDGER *
-                      1000
-                  : undefined;
-              const approvedAt =
-                approvedAtLedger > 0
-                  ? Date.now() -
-                    (currentLedger - approvedAtLedger) *
-                      SECONDS_PER_LEDGER *
-                      1000
-                  : undefined;
+                if (typeof rawStatus === "string") {
+                  // Status is an enum string like "NotStarted", "Submitted", "Approved", etc.
+                  switch (rawStatus.toLowerCase()) {
+                    case "notstarted":
+                    case "pending":
+                      statusNumber = 0;
+                      break;
+                    case "submitted":
+                      statusNumber = 1;
+                      break;
+                    case "approved":
+                      statusNumber = 2;
+                      break;
+                    case "disputed":
+                      statusNumber = 3;
+                      break;
+                    case "resolved":
+                      statusNumber = 4;
+                      break;
+                    case "rejected":
+                      statusNumber = 5;
+                      break;
+                    default:
+                      statusNumber = 0;
+                  }
+                } else if (typeof rawStatus === "number") {
+                  statusNumber = rawStatus;
+                } else if (Array.isArray(rawStatus) && rawStatus.length > 0) {
+                  // Status might be an enum array
+                  const statusStr = rawStatus[0];
+                  if (typeof statusStr === "string") {
+                    switch (statusStr.toLowerCase()) {
+                      case "notstarted":
+                      case "pending":
+                        statusNumber = 0;
+                        break;
+                      case "submitted":
+                        statusNumber = 1;
+                        break;
+                      case "approved":
+                        statusNumber = 2;
+                        break;
+                      case "disputed":
+                        statusNumber = 3;
+                        break;
+                      case "resolved":
+                        statusNumber = 4;
+                        break;
+                      case "rejected":
+                        statusNumber = 5;
+                        break;
+                    }
+                  } else if (typeof statusStr === "number") {
+                    statusNumber = statusStr;
+                  }
+                }
 
-              return {
-                description: m.description || "",
-                amount: m.amount?.toString() || "0",
-                status,
-                submittedAt,
-                approvedAt,
-                disputeReason: m.dispute_reason || undefined,
-                rejectionReason: undefined,
-              };
-            });
+                const statusMap: Record<
+                  number,
+                  | "pending"
+                  | "submitted"
+                  | "approved"
+                  | "rejected"
+                  | "disputed"
+                  | "resolved"
+                > = {
+                  0: "pending",
+                  1: "submitted",
+                  2: "approved",
+                  3: "disputed",
+                  4: "resolved",
+                  5: "rejected",
+                };
+                const status = statusMap[statusNumber] || "pending";
+
+                console.log(
+                  `[DashboardPage] Milestone ${i}-${milestoneIndex} status: ${rawStatus} (${typeof rawStatus}) -> ${statusNumber} -> ${status}`,
+                  {
+                    milestone: m,
+                    rawStatus,
+                    statusNumber,
+                    status,
+                    submitted_at: m.submitted_at,
+                    approved_at: m.approved_at,
+                  }
+                );
+
+                // Convert ledger sequences to timestamps
+                const SECONDS_PER_LEDGER = 5;
+                const submittedAtLedger = m.submitted_at || 0;
+                const approvedAtLedger = m.approved_at || 0;
+                const submittedAt =
+                  submittedAtLedger > 0
+                    ? Date.now() -
+                      (currentLedger - submittedAtLedger) *
+                        SECONDS_PER_LEDGER *
+                        1000
+                    : undefined;
+                const approvedAt =
+                  approvedAtLedger > 0
+                    ? Date.now() -
+                      (currentLedger - approvedAtLedger) *
+                        SECONDS_PER_LEDGER *
+                        1000
+                    : undefined;
+
+                return {
+                  description: m.description || "",
+                  amount: m.amount?.toString() || "0",
+                  status,
+                  submittedAt,
+                  approvedAt,
+                  disputeReason: m.dispute_reason || undefined,
+                  rejectionReason: undefined,
+                };
+              }
+            );
 
             // Convert contract data to our Escrow type
             const escrow: Escrow = {

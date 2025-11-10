@@ -72,9 +72,17 @@ export function MilestoneActions({
 
   // Helper functions
   const canApproveMilestone = () => {
-    return (
-      milestone.status === "submitted" && isPayer && escrowStatus === "active"
-    );
+    const canApprove =
+      milestone.status === "submitted" && isPayer && escrowStatus === "active";
+    console.log("[MilestoneActions] canApproveMilestone check:", {
+      milestoneStatus: milestone.status,
+      isPayer,
+      escrowStatus,
+      canApprove,
+      escrowId,
+      milestoneIndex,
+    });
+    return canApprove;
   };
 
   const canResubmitMilestone = () => {
@@ -120,12 +128,18 @@ export function MilestoneActions({
           );
           break;
         case "approve":
-          txHash = await contract.send(
-            "approve_milestone",
-            Number(escrowId),
-            milestoneIndex,
-            wallet.address
+          // Use ContractService instead of contract.send - it handles the correct format
+          const { ContractService } = await import(
+            "@/lib/web3/contract-service"
           );
+          const contractService = new ContractService(
+            CONTRACTS.SECUREFLOW_ESCROW
+          );
+          txHash = await contractService.approveMilestone({
+            escrow_id: Number(escrowId),
+            milestone_index: milestoneIndex,
+            depositor: wallet.address || "",
+          });
           break;
         case "reject":
           txHash = await contract.send(
@@ -234,6 +248,20 @@ export function MilestoneActions({
   return (
     <>
       <div className="flex items-center gap-2">
+        {/* Approve Milestone - Only payer for submitted milestones (disabled if terminated) */}
+        {canApproveMilestone() && !isProjectTerminated && (
+          <Button
+            onClick={() => openDialog("approve")}
+            size="sm"
+            variant="default"
+            className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+            disabled={isLoading}
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            {isLoading ? "Processing..." : "Approve"}
+          </Button>
+        )}
+
         {/* Reject Milestone - Only payer for submitted milestones (disabled if terminated) */}
         {canApproveMilestone() && !isProjectTerminated && (
           <Button
