@@ -1,7 +1,5 @@
-
-
 import { Card } from "@/components/ui/card";
-import { User, Briefcase } from "lucide-react";
+import { User } from "lucide-react";
 
 interface ApprovalsLoadingProps {
   isConnected: boolean;

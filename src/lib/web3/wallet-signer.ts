@@ -7,7 +7,7 @@ import { TransactionBuilder } from "@stellar/stellar-sdk";
 import { wallet } from "@/util/wallet";
 import { getCurrentNetwork } from "./stellar-config";
 import storage from "@/util/storage";
-import { kit } from "./wallet-kit";
+// import { kit } from "./wallet-kit"; // Unused
 
 interface SignTransactionProps {
   unsignedTransaction: string | TransactionBuilder;
@@ -25,7 +25,8 @@ export const signTransaction = async ({
   if (typeof unsignedTransaction === "string") {
     txXdr = unsignedTransaction;
   } else {
-    txXdr = unsignedTransaction.toXDR();
+    // TransactionBuilder has toXDR() method
+    txXdr = (unsignedTransaction as any).toXDR();
   }
 
   // Get wallet ID from storage
@@ -75,7 +76,8 @@ export const signAuthEntries = async (
         });
 
         // Ensure we have a signed auth entry
-        const signedEntry = signed.signedAuthEntry || signed.signedAuthEntryXdr;
+        const signedEntry =
+          signed.signedAuthEntry || (signed as any).signedAuthEntryXdr;
         if (!signedEntry || signedEntry === entryXdr) {
           throw new Error(
             "Auth entry signing failed - no signed entry returned"

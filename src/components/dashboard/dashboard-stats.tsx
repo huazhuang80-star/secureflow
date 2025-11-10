@@ -1,5 +1,3 @@
-
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -40,9 +38,9 @@ export function DashboardStats({ escrows }: DashboardStatsProps) {
     (escrow) => escrow.status === "active" && !isEscrowTerminated(escrow)
   ).length;
 
-  const completedProjects = escrows.filter(
-    (escrow) => escrow.status === "completed"
-  ).length;
+  // const completedProjects = escrows.filter(
+  //   (escrow) => escrow.status === "completed"
+  // ).length; // Unused
 
   // Count disputed projects (including terminated ones)
   const disputedProjects = escrows.filter(

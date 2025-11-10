@@ -141,6 +141,10 @@ impl SecureFlow {
         admin::set_fee_collector(&env, fee_collector)
     }
 
+    pub fn set_owner(env: Env, new_owner: Address) -> Result<(), Error> {
+        admin::set_owner(&env, new_owner)
+    }
+
     pub fn whitelist_token(env: Env, token: Address) -> Result<(), Error> {
         admin::require_owner(&env)?;
         env.storage()

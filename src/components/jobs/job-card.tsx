@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { Clock, DollarSign, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle } from "lucide-react";
 import type { Escrow } from "@/lib/web3/types";
 
 interface JobCardProps {

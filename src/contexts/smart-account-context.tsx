@@ -1,13 +1,7 @@
 // Stellar doesn't use smart accounts - regular accounts are used directly
 // This context provides a compatibility layer for components that expect smart accounts
 
-import {
-  createContext,
-  use,
-  useState,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { createContext, use, useState, useEffect, type ReactNode } from "react";
 import { useWeb3 } from "./web3-context";
 import { useToast } from "@/hooks/use-toast";
 
@@ -102,9 +96,9 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
   };
 
   const executeTransaction = async (
-    to: string,
-    data: string,
-    value: string = "0"
+    to: string
+    // data: string, // Unused
+    // value: string = "0" // Unused
   ) => {
     try {
       if (!wallet.isConnected || !wallet.address) {
@@ -152,7 +146,7 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
       const txHashes = [];
       for (const tx of transactions) {
         try {
-          const hash = await executeTransaction(tx.to, tx.data, tx.value);
+          const hash = await executeTransaction(tx.to);
           txHashes.push(hash);
         } catch (error) {
           console.error(`Batch transaction failed for ${tx.to}:`, error);

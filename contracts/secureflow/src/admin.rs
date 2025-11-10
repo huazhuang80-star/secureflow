@@ -85,6 +85,17 @@ pub fn set_fee_collector(env: &Env, fee_collector: Address) -> Result<(), Error>
     Ok(())
 }
 
+pub fn set_owner(env: &Env, new_owner: Address) -> Result<(), Error> {
+    require_owner(env)?;
+    env.storage()
+        .instance()
+        .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+    env.storage()
+        .instance()
+        .set(&DataKey::Owner, &new_owner);
+    Ok(())
+}
+
 pub fn is_job_creation_paused(env: &Env) -> bool {
     env.storage()
         .instance()

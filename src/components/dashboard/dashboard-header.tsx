@@ -1,7 +1,5 @@
-
-
 import { motion } from "framer-motion";
-import { TrendingUp } from "lucide-react";
+// import { TrendingUp } from "lucide-react"; // Unused
 
 export function DashboardHeader() {
   return (

@@ -63,10 +63,12 @@ export function ProjectDetailsStep({
               required
               minLength={3}
               className={
-                errors.projectTitle ? "border-red-500 focus:border-red-500" : ""
+                errors?.projectTitle
+                  ? "border-red-500 focus:border-red-500"
+                  : ""
               }
             />
-            {errors.projectTitle && (
+            {errors?.projectTitle && (
               <p className="text-red-500 text-sm mt-1">{errors.projectTitle}</p>
             )}
           </div>
@@ -85,10 +87,10 @@ export function ProjectDetailsStep({
               max="365"
               required
               className={
-                errors.duration ? "border-red-500 focus:border-red-500" : ""
+                errors?.duration ? "border-red-500 focus:border-red-500" : ""
               }
             />
-            {errors.duration && (
+            {errors?.duration && (
               <p className="text-red-500 text-sm mt-1">{errors.duration}</p>
             )}
           </div>
@@ -104,14 +106,14 @@ export function ProjectDetailsStep({
             onChange={(e) => onUpdate({ projectDescription: e.target.value })}
             placeholder="Describe the project requirements and deliverables..."
             className={`min-h-[120px] ${
-              errors.projectDescription
+              errors?.projectDescription
                 ? "border-red-500 focus:border-red-500"
                 : ""
             }`}
             required
             minLength={50}
           />
-          {errors.projectDescription ? (
+          {errors?.projectDescription ? (
             <p className="text-red-500 text-sm mt-1">
               {errors.projectDescription}
             </p>
@@ -137,10 +139,10 @@ export function ProjectDetailsStep({
               step="0.01"
               required
               className={
-                errors.totalBudget ? "border-red-500 focus:border-red-500" : ""
+                errors?.totalBudget ? "border-red-500 focus:border-red-500" : ""
               }
             />
-            {errors.totalBudget ? (
+            {errors?.totalBudget ? (
               <p className="text-red-500 text-sm mt-1">{errors.totalBudget}</p>
             ) : (
               <p className="text-xs text-muted-foreground mt-1">
@@ -162,10 +164,10 @@ export function ProjectDetailsStep({
               required={!formData.isOpenJob}
               pattern="^G[A-Z0-9]{55}$"
               className={
-                errors.beneficiary ? "border-red-500 focus:border-red-500" : ""
+                errors?.beneficiary ? "border-red-500 focus:border-red-500" : ""
               }
             />
-            {errors.beneficiary ? (
+            {errors?.beneficiary ? (
               <p className="text-red-500 text-sm mt-1">{errors.beneficiary}</p>
             ) : (
               <p className="text-xs text-muted-foreground mt-1">
@@ -204,12 +206,12 @@ export function ProjectDetailsStep({
                 required={!formData.useNativeToken}
                 pattern="^C[A-Z0-9]{55}$"
                 className={
-                  errors.tokenAddress
+                  errors?.tokenAddress
                     ? "border-red-500 focus:border-red-500"
                     : ""
                 }
               />
-              {errors.tokenAddress ? (
+              {errors?.tokenAddress ? (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.tokenAddress}
                 </p>

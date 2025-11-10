@@ -33,7 +33,7 @@ export function useSubscription(
   contractId: string,
   topic: string,
   onEvent: (event: Api.EventResponse) => void,
-  pollInterval = 5000,
+  pollInterval = 5000
 ) {
   const id = `${contractId}:${topic}`;
   paging[id] = paging[id] || {};
@@ -75,10 +75,13 @@ export function useSubscription(
             } catch (error) {
               console.error(
                 "Poll Events: subscription callback had error: ",
-                error,
+                error
               );
             } finally {
-              paging[id].pagingToken = event.pagingToken;
+              // Update paging token if available
+              if ((event as any).pagingToken) {
+                paging[id].pagingToken = (event as any).pagingToken;
+              }
             }
           });
         }

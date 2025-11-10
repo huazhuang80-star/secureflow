@@ -37,8 +37,8 @@ export function useAdminStatus() {
 
       // Get the contract owner
       const owner = await contract.call("owner");
-      console.log("Contract owner:", owner);
-      console.log("Wallet address:", wallet.address);
+      console.log("Contract owner:", owner, typeof owner);
+      console.log("Wallet address:", wallet.address, typeof wallet.address);
 
       if (!owner) {
         console.warn("Owner not found in contract");
@@ -46,9 +46,15 @@ export function useAdminStatus() {
         return;
       }
 
+      // Normalize both addresses to strings and lowercase for comparison
+      const ownerStr = String(owner).toLowerCase().trim();
+      const walletStr = (wallet.address || "").toLowerCase().trim();
+
+      console.log("Owner (normalized):", ownerStr);
+      console.log("Wallet (normalized):", walletStr);
+
       // Check if current wallet is the owner
-      const isOwner =
-        owner.toString().toLowerCase() === wallet.address?.toLowerCase();
+      const isOwner = ownerStr === walletStr;
       console.log("Is owner:", isOwner);
 
       // Also check if user has an active delegation granted TO their address

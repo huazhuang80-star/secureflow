@@ -11,8 +11,8 @@ import {
   Users,
   CheckCircle2,
   AlertCircle,
-  Play,
-  Pause,
+  // Play, // Unused
+  // Pause, // Unused
   Gavel,
   Send,
 } from "lucide-react";
@@ -22,12 +22,12 @@ export default function SmartAccountDemoPage() {
   const { smartAccount, deploySmartAccount, isSmartAccountReady } =
     useSmartAccount();
   const {
-    delegations,
+    // delegations, // Unused
     createDelegation,
     revokeDelegation,
     getActiveDelegations,
   } = useDelegation();
-  const { wallet, getContract } = useWeb3();
+  const { wallet } = useWeb3();
   const { toast } = useToast();
   const [isDeploying, setIsDeploying] = useState(false);
 

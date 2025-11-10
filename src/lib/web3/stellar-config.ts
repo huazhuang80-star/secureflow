@@ -21,7 +21,7 @@ export const STELLAR_NETWORKS = {
 // Fallback to the deployed contract ID if env variable is not set
 // Testnet contract ID (deployed on testnet) - Updated with token transfer support
 const DEFAULT_CONTRACT_ID =
-  "CCNNZEAC2IFGQNGVCYUQMQMETXMRAZHMXR6HNMPDR6V7HU3PZ5PFJNCC";
+  "CDY5RKZP4NAAWVSTJEL2G4NPHD2PXOX4DHIRYBGKY7JA5KESQX7VYKIO";
 
 export const CONTRACTS = {
   SECUREFLOW_ESCROW:

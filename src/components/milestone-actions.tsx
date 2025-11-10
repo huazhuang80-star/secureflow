@@ -12,11 +12,7 @@ import { useWeb3 } from "@/contexts/web3-context";
 // Stellar doesn't use smart accounts or delegation
 // import { useSmartAccount } from "@/contexts/smart-account-context";
 // import { useDelegation } from "@/contexts/delegation-context";
-import {
-  useNotifications,
-  createMilestoneNotification,
-  createEscrowNotification,
-} from "@/contexts/notification-context";
+// import { useNotifications } from "@/contexts/notification-context"; // Unused
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
 
@@ -26,7 +22,6 @@ import {
   AlertTriangle,
   Gavel,
   Play,
-  Zap,
   XCircle,
 } from "lucide-react";
 import type { Milestone } from "@/lib/web3/types";
@@ -53,14 +48,12 @@ export function MilestoneActions({
   isBeneficiary,
   escrowStatus,
   onSuccess,
-  allMilestones = [],
-  showSubmitButton = true, // Default to true for backward compatibility
-  payerAddress,
-  beneficiaryAddress,
+  // allMilestones = [], // Unused
+  // showSubmitButton = true, // Unused
+  // payerAddress, // Unused
+  // beneficiaryAddress, // Unused
 }: MilestoneActionsProps) {
   const { wallet, getContract } = useWeb3();
-  // Stellar doesn't use smart accounts or delegation
-  const { addNotification, addCrossWalletNotification } = useNotifications();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -216,6 +209,11 @@ export function MilestoneActions({
         "Resubmit this milestone with improvements based on client feedback.",
       confirmText: "Resubmit Milestone",
     },
+    resolve: {
+      title: "Resolve Dispute",
+      description: "Resolve this dispute and finalize the milestone outcome.",
+      confirmText: "Resolve Dispute",
+    },
   }[actionType || "submit"] || {
     title: "Confirm Action",
     description: "Are you sure you want to proceed?",
@@ -230,6 +228,7 @@ export function MilestoneActions({
       reject: XCircle,
       dispute: Gavel,
       resubmit: Send,
+      resolve: CheckCircle2,
     }[actionType || "submit"] || Send;
 
   return (

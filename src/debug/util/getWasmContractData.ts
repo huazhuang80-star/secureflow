@@ -1,6 +1,3 @@
- 
- 
- 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as StellarXdr from "./StellarXdr";
 import { prettifyJsonString } from "./prettifyJsonString";
@@ -12,7 +9,12 @@ import {
 
 export const getWasmContractData = async (wasmBytes: Buffer) => {
   try {
-    const mod = await WebAssembly.compile(wasmBytes);
+    // Convert Buffer to ArrayBuffer for WebAssembly
+    const arrayBuffer = wasmBytes.buffer.slice(
+      wasmBytes.byteOffset,
+      wasmBytes.byteOffset + wasmBytes.byteLength
+    ) as ArrayBuffer;
+    const mod = await WebAssembly.compile(arrayBuffer);
 
     const result: Record<ContractSectionName, ContractData> = {
       contractmetav0: {},
@@ -46,7 +48,7 @@ export const getWasmContractData = async (wasmBytes: Buffer) => {
 
 const sectionResult = (
   sectionName: ContractSectionName,
-  section: ArrayBuffer,
+  section: ArrayBuffer
 ) => {
   const sectionData = new Uint8Array(section);
   const sectionXdr = Buffer.from(sectionData).toString("base64");
@@ -69,13 +71,13 @@ const getJsonAndXdr = (sectionName: ContractSectionName, xdr: string) => {
   try {
     const jsonStringArray = StellarXdr.decode_stream(
       TYPE_VARIANT[sectionName],
-      xdr,
+      xdr
     );
 
     return {
       json: jsonStringArray.map((s: string) => prettifyJsonString(s)),
       xdr: jsonStringArray.map((s: string) =>
-        StellarXdr.encode(TYPE_VARIANT[sectionName], s),
+        StellarXdr.encode(TYPE_VARIANT[sectionName], s)
       ),
     };
   } catch (e) {

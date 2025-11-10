@@ -1,5 +1,3 @@
-
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { Clock, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import { MilestoneActions } from "@/components/milestone-actions";
-import type { Escrow, Milestone } from "@/lib/web3/types";
+import type { Escrow } from "@/lib/web3/types";
 
 interface EscrowCardProps {
   escrow: Escrow;
@@ -32,13 +30,13 @@ export function EscrowCard({
   escrow,
   index,
   expandedEscrow,
-  submittingMilestone,
+  // submittingMilestone, // Unused
   onToggleExpanded,
-  onApproveMilestone,
-  onRejectMilestone,
-  onDisputeMilestone,
-  onStartWork,
-  onDispute,
+  // onApproveMilestone, // Unused
+  // onRejectMilestone, // Unused
+  // onDisputeMilestone, // Unused
+  // onStartWork, // Unused
+  // onDispute, // Unused
   calculateDaysLeft,
   getDaysLeftMessage,
 }: EscrowCardProps) {

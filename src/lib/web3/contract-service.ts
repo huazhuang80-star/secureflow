@@ -7,7 +7,7 @@
 import {
   Contract,
   rpc,
-  Address,
+  // Address, // Unused
   nativeToScVal,
   scValToNative,
   TransactionBuilder,
@@ -763,20 +763,59 @@ export class ContractService {
       }
 
       // Convert ScVal to native format
+      // scValToNative should handle Address ScVal conversion automatically
       try {
         ownerAddress = scValToNative(retval);
+
+        // If ownerAddress is an Address object, convert to string
+        if (ownerAddress && typeof ownerAddress === "object") {
+          // Check if it's an Address instance from Stellar SDK
+          const { Address } = await import("@stellar/stellar-sdk");
+          if (ownerAddress instanceof Address) {
+            ownerAddress = ownerAddress.toString();
+          } else if (
+            "toString" in ownerAddress &&
+            typeof ownerAddress.toString === "function"
+          ) {
+            ownerAddress = ownerAddress.toString();
+          } else if ("address" in ownerAddress) {
+            ownerAddress = ownerAddress.address;
+          }
+        }
       } catch (e: any) {
         console.error("Error converting ScVal to native:", e);
-        throw new Error(
-          `Failed to extract owner from contract result: ${e.message || e}`
-        );
+        // If scValToNative fails, try manual extraction
+        try {
+          if (retval && typeof retval === "object" && "switch" in retval) {
+            const scValType = retval.switch();
+            if (scValType === xdr.ScValType.scvAddress()) {
+              const addressObj = (retval as any).address();
+              if (
+                addressObj &&
+                addressObj.switch() === xdr.ScAddressType.scAddressTypeAccount()
+              ) {
+                const accountId = addressObj.accountId();
+                const pubKey = accountId.ed25519();
+                const { Keypair } = await import("@stellar/stellar-sdk");
+                ownerAddress = Keypair.fromPublicKey(
+                  pubKey.toString("hex")
+                ).publicKey();
+              }
+            }
+          }
+        } catch (e2: any) {
+          throw new Error(
+            `Failed to extract owner from contract result: ${e.message || e}`
+          );
+        }
       }
 
       if (!ownerAddress) {
         throw new Error("Owner not found - contract may not be initialized");
       }
 
-      return ownerAddress as string;
+      // Ensure ownerAddress is a string
+      return String(ownerAddress);
     } catch (error) {
       console.error("Error getting owner:", error);
       throw error;

@@ -1,5 +1,4 @@
-import { useNavigate, useLocation } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
@@ -7,7 +6,6 @@ import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { useJobCreatorStatus } from "@/hooks/use-job-creator-status";
 import { usePendingApprovals } from "@/hooks/use-pending-approvals";
-import { useRouter } from "react-router-dom";
 import { CONTRACTS } from "@/lib/web3/config";
 
 import {
@@ -15,7 +13,6 @@ import {
   createApplicationNotification,
 } from "@/contexts/notification-context";
 import type { Escrow, Application } from "@/lib/web3/types";
-import { motion } from "framer-motion";
 import { Briefcase, MessageSquare } from "lucide-react";
 import { ApprovalsHeader } from "@/components/approvals/approvals-header";
 import { ApprovalsStats } from "@/components/approvals/approvals-stats";
@@ -52,7 +49,7 @@ export default function ApprovalsPage() {
     }
   }, [selectedFreelancer]);
   const [approving, setApproving] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
+  const [, setIsApproving] = useState(false); // Used in handlers
 
   const getStatusFromNumber = (
     status: number
@@ -90,7 +87,8 @@ export default function ApprovalsPage() {
 
           if (isMyJob) {
             const isOpenJob =
-              escrowSummary[1] === "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+              escrowSummary[1] ===
+              "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
             if (isOpenJob) {
               let applicationCount = 0;
@@ -168,10 +166,12 @@ export default function ApprovalsPage() {
                           try {
                             // Strategy 1: Try to get the raw data without property access
                             // Handle BigInt serialization by converting to string first
-                            const rawData = JSON.stringify(app, (key, value) =>
-                              typeof value === "bigint"
-                                ? value.toString()
-                                : value
+                            const rawData = JSON.stringify(
+                              app,
+                              (_key, value) =>
+                                typeof value === "bigint"
+                                  ? value.toString()
+                                  : value
                             );
 
                             // Try to parse the JSON data
@@ -222,7 +222,7 @@ export default function ApprovalsPage() {
                               }
                             } catch (valuesError) {
                               try {
-                                const keys = Object.keys(app);
+                                // const keys = Object.keys(app); // Unused
 
                                 // Try to access properties using the keys
                                 const safeAccess = (obj: any, key: string) => {
@@ -442,7 +442,7 @@ export default function ApprovalsPage() {
         throw new Error("Contract instance not found");
       }
 
-      const txHash = await contract.send(
+      await contract.send(
         "accept_freelancer",
         "no-value",
         Number(selectedJobForApproval.id),
@@ -520,7 +520,7 @@ export default function ApprovalsPage() {
     ) {
       navigate("/dashboard");
     }
-  }, [wallet.isConnected, isJobCreator, loading, hasPendingApprovals, router]);
+  }, [wallet.isConnected, isJobCreator, loading, hasPendingApprovals]);
 
   if (!wallet.isConnected) {
     return (
@@ -557,15 +557,15 @@ export default function ApprovalsPage() {
     return <ApprovalsLoading isConnected={wallet.isConnected} />;
   }
 
-  const totalJobs = jobs.length;
-  const totalApplications = jobs.reduce(
-    (sum, job) => sum + job.applicationCount,
-    0
-  );
-  const totalValue = jobs.reduce(
-    (sum, job) => sum + Number(job.totalAmount) / 1e7,
-    0
-  );
+  // const totalJobs = jobs.length; // Unused
+  // const totalApplications = jobs.reduce(
+  //   (sum, job) => sum + job.applicationCount,
+  //   0
+  // ); // Unused
+  // const totalValue = jobs.reduce(
+  //   (sum, job) => sum + Number(job.totalAmount) / 1e7,
+  //   0
+  // ); // Unused
 
   return (
     <div className="container mx-auto px-4 py-8">

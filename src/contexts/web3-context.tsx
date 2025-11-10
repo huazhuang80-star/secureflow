@@ -75,12 +75,30 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
     checkConnection();
 
-    // Check connection periodically
+    // Check connection periodically, but only if we have walletId in storage
+    // Don't repeatedly call wallet.getAddress() which opens popups
     const interval = setInterval(() => {
-      if (!walletState.isConnected) {
+      const walletId = storage.getItem("walletId");
+      const walletAddr = storage.getItem("walletAddress");
+
+      // Only check if we have walletId but no connection state
+      // If we already have address in storage, just update state without calling wallet
+      if (!walletState.isConnected && walletId && walletAddr) {
+        // Update state from storage without calling wallet methods
+        // Preserve existing balance - don't reset it
+        setWalletState((prev) => ({
+          address: walletAddr,
+          chainId: null,
+          isConnected: true,
+          balance: prev.balance || "0", // Keep existing balance
+        }));
+      } else if (!walletState.isConnected && walletId && !walletAddr) {
+        // Only call checkConnection if we have walletId but no cached address
+        // This prevents repeated popups
         checkConnection();
       }
-    }, 2000);
+      // Don't call checkConnection if already connected - this prevents balance resets
+    }, 10000); // Increased interval to 10 seconds to reduce frequency
 
     return () => {
       clearInterval(interval);
@@ -93,6 +111,50 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       const walletAddr = storage.getItem("walletAddress");
 
       if (walletId && walletAddr) {
+        // If we already have the address in storage and state matches,
+        // just fetch balance without calling wallet.getAddress() (which opens popup)
+        if (walletState.isConnected && walletState.address === walletAddr) {
+          // Just refresh balance, don't call wallet methods
+          // Only refresh if we don't already have a valid balance
+          // This prevents unnecessary API calls and balance resets
+          if (!walletState.balance || walletState.balance === "0") {
+            try {
+              const { Horizon } = await import("@stellar/stellar-sdk");
+              const horizonUrl =
+                network.horizonUrl || "https://horizon-testnet.stellar.org";
+              const horizon = new Horizon.Server(horizonUrl);
+
+              const account = await horizon
+                .accounts()
+                .accountId(walletAddr)
+                .call();
+              const nativeBalance = account.balances.find(
+                (b: any) => b.asset_type === "native"
+              );
+
+              const fullBalance = nativeBalance
+                ? parseFloat(nativeBalance.balance)
+                : null;
+
+              // Only update balance if we successfully fetched it
+              // If nativeBalance is not found, keep existing balance
+              if (fullBalance !== null) {
+                setWalletState((prev) => ({
+                  ...prev,
+                  balance: fullBalance.toFixed(7),
+                }));
+              }
+              // If nativeBalance is null, keep existing balance (don't reset to 0)
+            } catch (error: any) {
+              // Balance fetch failed, but keep connection state and existing balance
+              console.error("Error fetching balance:", error);
+              // Don't reset balance to 0 if fetch fails - keep existing balance
+            }
+          }
+          return;
+        }
+
+        // Only call wallet.getAddress() if we don't have state or it doesn't match
         try {
           wallet.setWallet(walletId);
           const addressResult = await wallet.getAddress();
@@ -117,25 +179,31 @@ export function Web3Provider({ children }: { children: ReactNode }) {
               // Get full precision balance from blockchain
               const fullBalance = nativeBalance
                 ? parseFloat(nativeBalance.balance)
-                : 0;
+                : null;
 
-              setWalletState({
+              // Only set balance if we successfully fetched it
+              // If nativeBalance is not found, keep existing balance or use 0 as fallback
+              setWalletState((prev) => ({
                 address: publicKey,
                 chainId: null, // Stellar doesn't use chain IDs
                 isConnected: true,
-                balance: fullBalance.toFixed(7), // Use 7 decimals for XLM (full precision)
-              });
+                balance:
+                  fullBalance !== null
+                    ? fullBalance.toFixed(7)
+                    : prev.balance || "0", // Use 7 decimals for XLM (full precision)
+              }));
 
               await checkOwnerStatus(publicKey);
             } catch (error: any) {
               console.error("Error fetching balance:", error);
               // If account doesn't exist yet, still set connected
-              setWalletState({
+              // Keep existing balance if available, don't reset to 0
+              setWalletState((prev) => ({
                 address: publicKey,
                 chainId: null,
                 isConnected: true,
-                balance: "0",
-              });
+                balance: prev.balance || "0", // Keep existing balance if fetch fails
+              }));
               await checkOwnerStatus(publicKey);
             }
           }
@@ -202,14 +270,19 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           // Get full precision balance from blockchain
           const fullBalance = nativeBalance
             ? parseFloat(nativeBalance.balance)
-            : 0;
+            : null;
 
-          setWalletState({
+          // Only set balance if we successfully fetched it
+          // If nativeBalance is not found, keep existing balance or use 0 as fallback
+          setWalletState((prev) => ({
             address: publicKey,
             chainId: null,
             isConnected: true,
-            balance: fullBalance.toFixed(7), // Use 7 decimals for XLM (full precision)
-          });
+            balance:
+              fullBalance !== null
+                ? fullBalance.toFixed(7)
+                : prev.balance || "0", // Use 7 decimals for XLM (full precision)
+          }));
 
           await checkOwnerStatus(publicKey);
 
@@ -223,12 +296,13 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         } catch (error: any) {
           console.error("Error fetching balance:", error);
           // Account might not exist yet
-          setWalletState({
+          // Keep existing balance if available, don't reset to 0
+          setWalletState((prev) => ({
             address: publicKey,
             chainId: null,
             isConnected: true,
-            balance: "0",
-          });
+            balance: prev.balance || "0", // Keep existing balance if fetch fails
+          }));
           await checkOwnerStatus(publicKey);
 
           toast({
@@ -360,10 +434,22 @@ export function Web3Provider({ children }: { children: ReactNode }) {
               const contract = new Contract(contractId);
               const server = createRpcServer();
 
-              // Call is_job_creation_paused method
-              const result = await server.simulateTransaction(
-                contract.call("is_job_creation_paused")
+              // Build a transaction with the contract call
+              const sourceAccount = await server.getAccount(
+                walletState.address ||
+                  "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
               );
+              const op = contract.call("is_job_creation_paused");
+              const tx = new TransactionBuilder(sourceAccount, {
+                fee: "100",
+                networkPassphrase: network.networkPassphrase,
+              })
+                .addOperation(op)
+                .setTimeout(30)
+                .build();
+
+              // Call is_job_creation_paused method
+              const result = await server.simulateTransaction(tx);
 
               // Check if simulation failed
               if ("errorResult" in result && result.errorResult) {
@@ -377,7 +463,16 @@ export function Web3Provider({ children }: { children: ReactNode }) {
               // Check if simulation succeeded
               if ("returnValue" in result && result.returnValue) {
                 try {
-                  return scValToNative(result.returnValue);
+                  // Check if returnValue is a valid ScVal (has switch method)
+                  const returnVal = result.returnValue as any;
+                  if (
+                    returnVal &&
+                    typeof returnVal === "object" &&
+                    typeof returnVal.switch === "function"
+                  ) {
+                    return scValToNative(returnVal as any);
+                  }
+                  return result.returnValue;
                 } catch {
                   return result.returnValue;
                 }
@@ -420,9 +515,21 @@ export function Web3Provider({ children }: { children: ReactNode }) {
               return nativeToScVal(arg);
             });
 
-            const result = await server.simulateTransaction(
-              contract.call(method, ...methodArgs)
+            // Build a transaction with the contract call
+            const sourceAccount = await server.getAccount(
+              walletState.address ||
+                "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
             );
+            const op = contract.call(method, ...methodArgs);
+            const tx = new TransactionBuilder(sourceAccount, {
+              fee: "100",
+              networkPassphrase: network.networkPassphrase,
+            })
+              .addOperation(op)
+              .setTimeout(30)
+              .build();
+
+            const result = await server.simulateTransaction(tx);
 
             // Check if simulation failed
             if ("errorResult" in result && result.errorResult) {
@@ -434,7 +541,16 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             // Check if simulation succeeded
             if ("returnValue" in result && result.returnValue) {
               try {
-                return scValToNative(result.returnValue);
+                // Check if returnValue is a valid ScVal (has switch method)
+                const returnVal = result.returnValue as any;
+                if (
+                  returnVal &&
+                  typeof returnVal === "object" &&
+                  typeof returnVal.switch === "function"
+                ) {
+                  return scValToNative(returnVal as any);
+                }
+                return result.returnValue;
               } catch {
                 return result.returnValue;
               }
@@ -504,7 +620,30 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           } else if (method === "approve_milestone" && args[0]) {
             assembledTx = await client.approve_milestone(args[0]);
           } else if (method === "apply_to_job" && args[0]) {
-            assembledTx = await client.apply_to_job(args[0]);
+            // Ensure freelancer address is provided
+            // The contract requires auth from the freelancer address
+            const freelancerAddress =
+              args[0].freelancer || walletState.address || "";
+
+            // The generated client expects a string, but we need to ensure it's a valid address
+            // The client should handle the conversion to Address ScVal automatically
+            const applyArgs = {
+              escrow_id: args[0].escrow_id,
+              cover_letter: args[0].cover_letter,
+              proposed_timeline: args[0].proposed_timeline,
+              freelancer: freelancerAddress, // Pass as string - client will convert to Address ScVal
+            };
+            console.log("Calling apply_to_job with args:", applyArgs);
+
+            // Get fresh account to ensure correct sequence number
+            // This prevents txBadSeq errors
+            const server = createRpcServer();
+            await server.getAccount(walletState.address!);
+
+            // Build the transaction with the client
+            // The client should handle sequence numbers correctly
+            // We fetch fresh account before building to ensure RPC cache is updated
+            assembledTx = await client.apply_to_job(applyArgs);
           } else if (method === "accept_freelancer" && args[0]) {
             assembledTx = await client.accept_freelancer(args[0]);
           } else if (method === "refund_escrow" && args[0]) {
@@ -550,7 +689,11 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             console.log("Simulation result:", simulation);
             // Check for auth entries in the simulation result
             const authEntries =
-              "auth" in simulation && simulation.auth ? simulation.auth : [];
+              "auth" in simulation &&
+              simulation.auth &&
+              Array.isArray(simulation.auth)
+                ? simulation.auth
+                : [];
             console.log("Simulation auth entries:", authEntries);
             console.log("Simulation auth count:", authEntries.length || 0);
 
@@ -584,16 +727,22 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                 address: walletState.address,
               });
 
+              if (!walletState.address) {
+                throw new Error(
+                  "Wallet address is required to sign auth entries"
+                );
+              }
+
               const signedAuthEntries = await Promise.all(
                 authEntries.map(async (entry: any) => {
                   const entryXdr = entry.toXDR("base64");
                   const signed = await signAuthEntry(entryXdr, {
                     networkPassphrase: network.networkPassphrase,
-                    address: walletState.address,
+                    address: walletState.address!,
                   });
                   return (
                     signed.signedAuthEntry ||
-                    signed.signedAuthEntryXdr ||
+                    (signed as any).signedAuthEntryXdr ||
                     entryXdr
                   );
                 })
@@ -642,9 +791,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                   // Create a new InvokeHostFunction operation with signed auth entries
                   // Use Operation.invokeHostFunction with the host function and signed auth
                   const newOp = Operation.invokeHostFunction({
-                    function: hostFn,
+                    function: hostFn as any,
                     auth: parsedSignedAuth,
-                  });
+                  } as any);
 
                   // Get fresh account to ensure correct sequence number
                   const freshAccount = await server.getAccount(
@@ -759,12 +908,17 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                     ) {
                       await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
                       try {
-                        txStatus = await server.getTransaction(
+                        const txResponse = await server.getTransaction(
                           sendResponse.hash
                         );
+                        // getTransaction returns GetTransactionResponse, extract the transaction
+                        txStatus =
+                          "status" in txResponse
+                            ? txResponse
+                            : (txResponse as any).transaction || txResponse;
                         console.log(
                           `Transaction status check ${attempts + 1}:`,
-                          txStatus.status
+                          (txStatus as any).status || "unknown"
                         );
                         attempts++;
                       } catch (error) {
@@ -776,33 +930,48 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                       }
                     }
 
-                    if (txStatus.status === "PENDING") {
+                    const txStatusValue = (txStatus as any).status || txStatus;
+                    if (txStatusValue === "PENDING") {
                       throw new Error(
                         "Transaction still pending after waiting. It may have failed."
                       );
                     }
 
-                    if (txStatus.status === "ERROR" || txStatus.errorResult) {
+                    const errorResult =
+                      (txStatus as any).errorResult || txStatus.errorResult;
+                    if (txStatusValue === "ERROR" || errorResult) {
                       let errorMessage = "Transaction failed";
-                      if (txStatus.errorResult) {
+                      if (errorResult) {
                         try {
-                          let errorValue = txStatus.errorResult;
-                          if (typeof errorValue.value === "function") {
-                            errorValue = errorValue.value();
-                          } else if (errorValue.value) {
-                            errorValue = errorValue.value;
+                          let errorValue: any = errorResult;
+                          // Handle different error result structures
+                          if (typeof errorValue === "object") {
+                            if (typeof errorValue.value === "function") {
+                              errorValue = errorValue.value();
+                            } else if (errorValue.value !== undefined) {
+                              errorValue = errorValue.value;
+                            } else if (errorValue.error !== undefined) {
+                              errorValue = errorValue.error;
+                            }
                           }
                           if (typeof errorValue === "string") {
                             errorMessage = `Transaction failed: ${errorValue}`;
-                          } else if (errorValue?.message) {
+                          } else if (
+                            errorValue &&
+                            typeof errorValue === "object" &&
+                            "message" in errorValue
+                          ) {
                             errorMessage = `Transaction failed: ${errorValue.message}`;
-                          } else if (errorValue?.toString) {
+                          } else if (
+                            errorValue &&
+                            typeof errorValue.toString === "function"
+                          ) {
                             errorMessage = `Transaction failed: ${errorValue.toString()}`;
                           } else {
                             errorMessage = `Transaction failed: ${JSON.stringify(errorValue)}`;
                           }
                         } catch (e) {
-                          errorMessage = `Transaction failed: ${JSON.stringify(txStatus.errorResult)}`;
+                          errorMessage = `Transaction failed: ${JSON.stringify(errorResult)}`;
                         }
                       }
                       console.error("Transaction failed after confirmation:", {
@@ -909,6 +1078,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           console.log("Assembled transaction:", assembledTx);
 
           // Sign the transaction manually, then send via RPC
+          // The assembled transaction already has the correct sequence number from the generated client
           const xdr = assembledTx.toXDR();
           console.log(
             "Transaction XDR created, requesting wallet signature..."
@@ -1193,12 +1363,19 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       );
 
       // Get full precision balance from blockchain
-      const fullBalance = nativeBalance ? parseFloat(nativeBalance.balance) : 0;
+      const fullBalance = nativeBalance
+        ? parseFloat(nativeBalance.balance)
+        : null;
 
-      setWalletState((prev) => ({
-        ...prev,
-        balance: fullBalance.toFixed(7), // Use 7 decimals for XLM (full precision)
-      }));
+      // Only update balance if we successfully fetched it
+      // If nativeBalance is not found, keep existing balance
+      if (fullBalance !== null) {
+        setWalletState((prev) => ({
+          ...prev,
+          balance: fullBalance.toFixed(7), // Use 7 decimals for XLM (full precision)
+        }));
+      }
+      // If nativeBalance is null, keep existing balance (don't reset to 0)
     } catch (error) {
       console.error("Error refreshing balance:", error);
     }

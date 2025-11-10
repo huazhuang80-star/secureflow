@@ -56,7 +56,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const updateCurrentWalletState = async () => {
+  const updateCurrentWalletState = async (forceRefresh = false) => {
     // There is no way, with StellarWalletsKit, to check if the wallet is
     // installed/connected/authorized. We need to manage that on our side by
     // checking our storage item.
@@ -65,7 +65,10 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     const walletAddr = storage.getItem("walletAddress");
     const passphrase = storage.getItem("networkPassphrase");
 
+    // If we already have state from storage and we're not forcing a refresh,
+    // just update state without calling wallet methods (which open popups)
     if (
+      !forceRefresh &&
       !state.address &&
       walletAddr !== null &&
       walletNetwork !== null &&
@@ -76,43 +79,57 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         network: walletNetwork,
         networkPassphrase: passphrase,
       });
+      return; // Don't call wallet methods if we have cached data
     }
 
     if (!walletId) {
       nullify();
-    } else {
-      if (popupLock.current) return;
-      // If our storage item is there, then we try to get the user's address &
-      // network from their wallet. Note: `getAddress` MAY open their wallet
-      // extension, depending on which wallet they select!
-      try {
-        popupLock.current = true;
-        wallet.setWallet(walletId);
-        if (walletId !== "freighter" && walletAddr !== null) return;
-        const [a, n] = await Promise.all([
-          wallet.getAddress(),
-          wallet.getNetwork(),
-        ]);
+      return;
+    }
 
-        if (!a.address) storage.setItem("walletId", "");
-        if (
-          a.address !== state.address ||
-          n.network !== state.network ||
-          n.networkPassphrase !== state.networkPassphrase
-        ) {
-          storage.setItem("walletAddress", a.address);
-          updateState({ ...a, ...n });
-        }
-      } catch (e) {
-        // If `getNetwork` or `getAddress` throw errors... sign the user out???
-        nullify();
-        // then log the error (instead of throwing) so we have visibility
-        // into the error while working on Scaffold Stellar but we do not
-        // crash the app process
-        console.error(e);
-      } finally {
-        popupLock.current = false;
+    // If we already have the address and we're not forcing refresh, skip wallet calls
+    if (!forceRefresh && walletAddr && state.address === walletAddr) {
+      return; // Already have the address, no need to call wallet
+    }
+
+    if (popupLock.current) return;
+
+    // If our storage item is there, then we try to get the user's address &
+    // network from their wallet. Note: `getAddress` MAY open their wallet
+    // extension, depending on which wallet they select!
+    try {
+      popupLock.current = true;
+      wallet.setWallet(walletId);
+
+      // For non-freighter wallets, if we have address in storage, don't call getAddress
+      if (walletId !== "freighter" && walletAddr !== null && !forceRefresh) {
+        popupLock.current = false; // Reset lock before returning
+        return;
       }
+
+      const [a, n] = await Promise.all([
+        wallet.getAddress(),
+        wallet.getNetwork(),
+      ]);
+
+      if (!a.address) storage.setItem("walletId", "");
+      if (
+        a.address !== state.address ||
+        n.network !== state.network ||
+        n.networkPassphrase !== state.networkPassphrase
+      ) {
+        storage.setItem("walletAddress", a.address);
+        updateState({ ...a, ...n });
+      }
+    } catch (e) {
+      // If `getNetwork` or `getAddress` throw errors... sign the user out???
+      nullify();
+      // then log the error (instead of throwing) so we have visibility
+      // into the error while working on Scaffold Stellar but we do not
+      // crash the app process
+      console.error(e);
+    } finally {
+      popupLock.current = false;
     }
   };
 
@@ -121,10 +138,12 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     let isMounted = true;
 
     // Create recursive polling function to check wallet state continuously
+    // Only check storage, don't call wallet methods (which open popups)
     const pollWalletState = async () => {
       if (!isMounted) return;
 
-      await updateCurrentWalletState();
+      // Only check storage, don't force refresh (which would open wallet popup)
+      await updateCurrentWalletState(false);
 
       if (isMounted) {
         timer = setTimeout(() => void pollWalletState(), POLL_INTERVAL);
@@ -132,8 +151,9 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     // Get the wallet address when the component is mounted for the first time
+    // Only call wallet methods on initial mount, not on every state change
     startTransition(async () => {
-      await updateCurrentWalletState();
+      await updateCurrentWalletState(true); // Force refresh only on mount
       // Start polling after initial state is loaded
 
       if (isMounted) {
@@ -146,7 +166,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       isMounted = false;
       if (timer) clearTimeout(timer);
     };
-  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps -- it SHOULD only run once per component mount
+  }, []); // Empty dependency array - only run once on mount
 
   const contextValue = useMemo(
     () => ({
@@ -154,7 +174,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       isPending,
       signTransaction,
     }),
-    [state, isPending, signTransaction],
+    [state, isPending, signTransaction]
   );
 
   return <WalletContext value={contextValue}>{children}</WalletContext>;

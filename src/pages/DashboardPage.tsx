@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { useWeb3 } from "@/contexts/web3-context";
@@ -12,17 +10,17 @@ import {
   createMilestoneNotification,
 } from "@/contexts/notification-context";
 import type { Escrow, Milestone } from "@/lib/web3/types";
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion"; // Unused
 import {
   Wallet,
-  CheckCircle2,
-  AlertCircle,
+  // CheckCircle2, // Unused
+  // AlertCircle, // Unused
   FileText,
-  Clock,
-  TrendingUp,
+  // Clock, // Unused
+  // TrendingUp, // Unused
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Badge } from "@/components/ui/badge"; // Unused
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Unused
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { EscrowCard } from "@/components/dashboard/escrow-card";
@@ -31,7 +29,7 @@ import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
 export default function DashboardPage() {
   const { wallet, getContract } = useWeb3();
   const { toast } = useToast();
-  const { addNotification, addCrossWalletNotification } = useNotifications();
+  const { addCrossWalletNotification } = useNotifications();
   const [escrows, setEscrows] = useState<Escrow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedEscrow, setExpandedEscrow] = useState<string | null>(null);
@@ -57,25 +55,25 @@ export default function DashboardPage() {
   };
 
   // Check if an escrow should be marked as terminated (has disputed or resolved milestones)
-  const isEscrowTerminated = (escrow: Escrow): boolean => {
-    return escrow.milestones.some(
-      (milestone) =>
-        milestone.status === "disputed" ||
-        milestone.status === "rejected" ||
-        milestone.status === "resolved"
-    );
-  };
+  // const isEscrowTerminated = (escrow: Escrow): boolean => { // Unused
+  //   return escrow.milestones.some(
+  //     (milestone) =>
+  //       milestone.status === "disputed" ||
+  //       milestone.status === "rejected" ||
+  //       milestone.status === "resolved"
+  //   );
+  // };
 
   // Check if all disputes have been resolved
-  const hasAllDisputesResolved = (escrow: Escrow): boolean => {
-    const disputedMilestones = escrow.milestones.filter(
-      (milestone) => milestone.status === "disputed"
-    );
-    return (
-      disputedMilestones.length === 0 &&
-      escrow.milestones.some((milestone) => milestone.status === "resolved")
-    );
-  };
+  // const hasAllDisputesResolved = (escrow: Escrow): boolean => { // Unused
+  //   const disputedMilestones = escrow.milestones.filter(
+  //     (milestone) => milestone.status === "disputed"
+  //   );
+  //   return (
+  //     disputedMilestones.length === 0 &&
+  //     escrow.milestones.some((milestone) => milestone.status === "resolved")
+  //   );
+  // };
 
   const getMilestoneStatusFromNumber = (status: number): string => {
     const statuses = [
@@ -241,7 +239,7 @@ export default function DashboardPage() {
                     }
 
                     // Debug amount conversion
-                    const amountInTokens = (Number(amount) / 1e7).toFixed(2);
+                    // const amountInTokens = (Number(amount) / 1e7).toFixed(2); // Unused
                   } catch (proxyError) {
                     // Fallback to basic parsing
                     description = `Milestone ${index + 1}`;
@@ -416,117 +414,117 @@ export default function DashboardPage() {
     }
   };
 
-  const getStatusBadge = (status: string, escrow?: Escrow) => {
-    // Check if this escrow should be terminated
-    const isTerminated = escrow ? isEscrowTerminated(escrow) : false;
-    const finalStatus = isTerminated ? "terminated" : status;
+  // const getStatusBadge = (status: string, escrow?: Escrow) => { // Unused
+  //   // Check if this escrow should be terminated
+  //   const isTerminated = escrow ? isEscrowTerminated(escrow) : false;
+  //   const finalStatus = isTerminated ? "terminated" : status;
+  //
+  //   const variants: Record<string, { variant: any; icon: any; label: string }> =
+  //     {
+  //       pending: { variant: "secondary", icon: Clock, label: "Pending" },
+  //       active: { variant: "default", icon: TrendingUp, label: "Active" },
+  //       completed: {
+  //         variant: "outline",
+  //         icon: CheckCircle2,
+  //         label: "Completed",
+  //       },
+  //       disputed: {
+  //         variant: "destructive",
+  //         icon: AlertCircle,
+  //         label: "Disputed",
+  //       },
+  //       terminated: {
+  //         variant: "secondary",
+  //         icon: AlertCircle,
+  //         label: "Terminated",
+  //       },
+  //     };
+  //
+  //   const config = variants[finalStatus] || variants.pending;
+  //   const Icon = config.icon;
+  //
+  //   return (
+  //     <Badge variant={config.variant} className="gap-1">
+  //       <Icon className="h-3 w-3" />
+  //       {config.label}
+  //     </Badge>
+  //   );
+  // };
 
-    const variants: Record<string, { variant: any; icon: any; label: string }> =
-      {
-        pending: { variant: "secondary", icon: Clock, label: "Pending" },
-        active: { variant: "default", icon: TrendingUp, label: "Active" },
-        completed: {
-          variant: "outline",
-          icon: CheckCircle2,
-          label: "Completed",
-        },
-        disputed: {
-          variant: "destructive",
-          icon: AlertCircle,
-          label: "Disputed",
-        },
-        terminated: {
-          variant: "secondary",
-          icon: AlertCircle,
-          label: "Terminated",
-        },
-      };
+  // const getMilestoneStatusBadge = (status: string) => { // Unused
+  //   const variants: Record<string, { variant: any; label: string }> = {
+  //     pending: { variant: "secondary", label: "Pending" },
+  //     submitted: { variant: "default", label: "Submitted" },
+  //     approved: { variant: "outline", label: "Approved" },
+  //     disputed: { variant: "destructive", label: "Disputed" },
+  //   };
+  //
+  //   const config = variants[status] || variants.pending;
+  //
+  //   return (
+  //     <Badge variant={config.variant} className="text-xs">
+  //       {config.label}
+  //     </Badge>
+  //   );
+  // };
 
-    const config = variants[finalStatus] || variants.pending;
-    const Icon = config.icon;
+  // const calculateProgress = (escrow: Escrow) => { // Unused
+  //   const released = Number.parseFloat(escrow.releasedAmount) / 1e7;
+  //   const total = Number.parseFloat(escrow.totalAmount) / 1e7;
+  //   return total > 0 ? (released / total) * 100 : 0;
+  // };
 
-    return (
-      <Badge variant={config.variant} className="gap-1">
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
-    );
-  };
+  // const formatAmount = (amount: string) => { // Unused
+  //   return (Number.parseFloat(amount) / 1e7).toFixed(2);
+  // };
 
-  const getMilestoneStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: any; label: string }> = {
-      pending: { variant: "secondary", label: "Pending" },
-      submitted: { variant: "default", label: "Submitted" },
-      approved: { variant: "outline", label: "Approved" },
-      disputed: { variant: "destructive", label: "Disputed" },
-    };
+  // const getTokenInfo = (tokenAddress: string) => { // Unused
+  //   return {
+  //     name:
+  //       tokenAddress === "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
+  //         ? "MON"
+  //         : "Token",
+  //     symbol:
+  //       tokenAddress === "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
+  //         ? "MON"
+  //         : "TKN",
+  //   };
+  // };
 
-    const config = variants[status] || variants.pending;
+  // const getStatusColor = (status: string) => { // Unused
+  //   switch (status) {
+  //     case "pending":
+  //       return "bg-yellow-100 text-yellow-800";
+  //     case "active":
+  //       return "bg-blue-100 text-blue-800";
+  //     case "completed":
+  //       return "bg-green-100 text-green-800";
+  //     case "disputed":
+  //       return "bg-red-100 text-red-800";
+  //     default:
+  //       return "bg-gray-100 text-gray-800";
+  //   }
+  // };
 
-    return (
-      <Badge variant={config.variant} className="text-xs">
-        {config.label}
-      </Badge>
-    );
-  };
+  // const getMilestoneStatusColor = (status: string) => { // Unused
+  //   switch (status) {
+  //     case "pending":
+  //       return "bg-yellow-100 text-yellow-800";
+  //     case "submitted":
+  //       return "bg-blue-100 text-blue-800";
+  //     case "approved":
+  //       return "bg-green-100 text-green-800";
+  //     case "disputed":
+  //       return "bg-red-100 text-red-800";
+  //     default:
+  //       return "bg-gray-100 text-gray-800";
+  //   }
+  // };
 
-  const calculateProgress = (escrow: Escrow) => {
-    const released = Number.parseFloat(escrow.releasedAmount) / 1e7;
-    const total = Number.parseFloat(escrow.totalAmount) / 1e7;
-    return total > 0 ? (released / total) * 100 : 0;
-  };
-
-  const formatAmount = (amount: string) => {
-    return (Number.parseFloat(amount) / 1e7).toFixed(2);
-  };
-
-  const getTokenInfo = (tokenAddress: string) => {
-    return {
-      name:
-        tokenAddress === "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
-          ? "MON"
-          : "Token",
-      symbol:
-        tokenAddress === "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
-          ? "MON"
-          : "TKN",
-    };
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "active":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "disputed":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getMilestoneStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "submitted":
-        return "bg-blue-100 text-blue-800";
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "disputed":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const filterEscrows = (filter: string) => {
-    if (filter === "all") return escrows;
-    return escrows.filter((e) => e.status === filter);
-  };
+  // const filterEscrows = (filter: string) => { // Unused
+  //   if (filter === "all") return escrows;
+  //   return escrows.filter((e) => e.status === filter);
+  // };
 
   const disputeMilestone = async (escrowId: string, milestoneIndex: number) => {
     try {
@@ -668,78 +666,53 @@ export default function DashboardPage() {
         description: "Please confirm the transaction in your wallet",
       });
 
-      const txHash = await contract.send(
+      await contract.send(
         "approve_milestone",
         "no-value",
         escrowId,
         milestoneIndex
       );
 
-      // Wait for transaction confirmation
-      let receipt;
-      let attempts = 0;
-      const maxAttempts = 30;
+      // Transaction is already confirmed via waitForConfirmation in web3-context
+      // For Stellar, we don't need to poll for receipts like Ethereum
+      // The transaction hash is returned after confirmation
+      toast({
+        title: "Milestone Approved!",
+        description: "Payment has been sent to the freelancer",
+      });
 
-      while (attempts < maxAttempts) {
-        try {
-          receipt = await window.ethereum.request({
-            method: "eth_getTransactionReceipt",
-            params: [txHash],
-          });
-          if (receipt) break;
-        } catch (error) {}
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        attempts++;
-      }
+      // Get freelancer address from escrow data
+      const freelancerAddress = escrow.beneficiary;
 
-      if (!receipt) {
-        throw new Error(
-          "Transaction timeout - please check the blockchain explorer"
-        );
-      }
+      // Add cross-wallet notification for milestone approval
+      addCrossWalletNotification(
+        createMilestoneNotification("approved", escrowId, milestoneIndex, {
+          clientName:
+            wallet.address.slice(0, 6) + "..." + wallet.address.slice(-4),
+          projectTitle: escrow.projectDescription || `Project #${escrowId}`,
+        }),
+        wallet.address || undefined, // Client address
+        freelancerAddress // Freelancer address
+      );
 
-      if (receipt.status === "0x1") {
-        toast({
-          title: "Milestone Approved!",
-          description: "Payment has been sent to the freelancer",
-        });
+      // Wait a moment for blockchain state to update
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
-        // Get freelancer address from escrow data
-        const freelancerAddress = escrow.beneficiary;
+      // Add debugging for payment tracking
+      // const milestone = escrow.milestones[milestoneIndex]; // Unused
 
-        // Add cross-wallet notification for milestone approval
-        addCrossWalletNotification(
-          createMilestoneNotification("approved", escrowId, milestoneIndex, {
-            clientName:
-              wallet.address.slice(0, 6) + "..." + wallet.address.slice(-4),
-            projectTitle: escrow.projectDescription || `Project #${escrowId}`,
-          }),
-          wallet.address || undefined, // Client address
-          freelancerAddress // Freelancer address
-        );
+      // Check if milestone amount is being parsed correctly
+      // const milestoneAmountInTokens = Number.parseFloat(milestone.amount) / 1e7; // Unused
 
-        // Wait a moment for blockchain state to update
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+      await fetchUserEscrows();
 
-        // Add debugging for payment tracking
-        const milestone = escrow.milestones[milestoneIndex];
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent("milestoneApproved"));
 
-        // Check if milestone amount is being parsed correctly
-        const milestoneAmountInTokens =
-          Number.parseFloat(milestone.amount) / 1e7;
-
-        await fetchUserEscrows();
-
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent("milestoneApproved"));
-
-        // Reload the page to ensure UI is fully updated
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        throw new Error("Transaction failed on blockchain");
-      }
+      // Reload the page to ensure UI is fully updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       toast({
         title: "Approval Failed",
@@ -780,7 +753,7 @@ export default function DashboardPage() {
         description: "Please confirm the transaction in your wallet",
       });
 
-      const txHash = await contract.send(
+      await contract.send(
         "rejectMilestone",
         "no-value",
         escrowId,
@@ -788,43 +761,19 @@ export default function DashboardPage() {
         reason
       );
 
-      // Wait for transaction confirmation
-      let receipt;
-      let attempts = 0;
-      const maxAttempts = 30;
+      // Transaction is already confirmed via waitForConfirmation in web3-context
+      // For Stellar, we don't need to poll for receipts like Ethereum
+      // The transaction hash is returned after confirmation
+      toast({
+        title: "Milestone Rejected",
+        description: "The freelancer has been notified and can resubmit",
+      });
+      await fetchUserEscrows();
 
-      while (attempts < maxAttempts) {
-        try {
-          receipt = await window.ethereum.request({
-            method: "eth_getTransactionReceipt",
-            params: [txHash],
-          });
-          if (receipt) break;
-        } catch (error) {}
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        attempts++;
-      }
-
-      if (!receipt) {
-        throw new Error(
-          "Transaction timeout - please check the blockchain explorer"
-        );
-      }
-
-      if (receipt.status === "0x1") {
-        toast({
-          title: "Milestone Rejected",
-          description: "The freelancer has been notified and can resubmit",
-        });
-        await fetchUserEscrows();
-
-        // Reload the page to ensure UI is fully updated
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        throw new Error("Transaction failed on blockchain");
-      }
+      // Reload the page to ensure UI is fully updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       toast({
         title: "Rejection Failed",
@@ -836,9 +785,9 @@ export default function DashboardPage() {
     }
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedEscrow(expandedEscrow === id ? null : id);
-  };
+  // const toggleExpand = (id: string) => { // Unused
+  //   setExpandedEscrow(expandedEscrow === id ? null : id);
+  // };
 
   if (!wallet.isConnected) {
     return (
@@ -858,10 +807,10 @@ export default function DashboardPage() {
     return <DashboardLoading isConnected={wallet.isConnected} />;
   }
 
-  const completedEscrows = escrows.filter((e) => e.status === "completed");
-  const totalVolume = escrows
-    .reduce((sum, e) => sum + Number.parseFloat(e.totalAmount) / 1e7, 0)
-    .toFixed(2);
+  // const completedEscrows = escrows.filter((e) => e.status === "completed"); // Unused
+  // const totalVolume = escrows
+  //   .reduce((sum, e) => sum + Number.parseFloat(e.totalAmount) / 1e7, 0)
+  //   .toFixed(2); // Unused
 
   if (!wallet.isConnected) {
     return (

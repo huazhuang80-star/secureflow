@@ -25,8 +25,8 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedJob, setSelectedJob] = useState<Escrow | null>(null);
-  const [coverLetter, setCoverLetter] = useState("");
-  const [proposedTimeline, setProposedTimeline] = useState("");
+  // const [coverLetter, setCoverLetter] = useState(""); // Unused - handled in dialog
+  // const [proposedTimeline, setProposedTimeline] = useState(""); // Unused - handled in dialog
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState<Record<string, boolean>>({});
   const [isContractPaused, setIsContractPaused] = useState(false);
@@ -451,13 +451,15 @@ export default function JobsPage() {
       }
 
       // Call the smart contract applyToJob function
-      await contract.send(
-        "apply_to_job",
-        "no-value",
-        job.id,
-        coverLetter,
-        proposedTimeline
-      );
+      // The contract expects: apply_to_job(escrow_id, cover_letter, proposed_timeline, freelancer)
+      // The generated client expects an object with these fields
+      // Pass freelancer address - contract will require auth from it
+      await contract.send("apply_to_job", {
+        escrow_id: Number.parseInt(job.id, 10),
+        cover_letter: coverLetter,
+        proposed_timeline: Number.parseInt(proposedTimeline, 10),
+        freelancer: wallet.address || "",
+      });
 
       toast({
         title: "Application Submitted!",
@@ -480,8 +482,7 @@ export default function JobsPage() {
         [job.payer] // Notify the client (job creator)
       );
 
-      setCoverLetter("");
-      setProposedTimeline("");
+      // coverLetter and proposedTimeline are handled in the dialog component
       setSelectedJob(null);
 
       // Update the application status for this specific job

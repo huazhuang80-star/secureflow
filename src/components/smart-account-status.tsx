@@ -1,12 +1,10 @@
-
-
 import { useSmartAccount } from "@/contexts/smart-account-context";
 import { useDelegation } from "@/contexts/delegation-context";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
   Shield,
-  Wallet,
+  // Wallet, // Unused
   CheckCircle2,
   AlertCircle,
   Clock,
@@ -71,8 +69,6 @@ export function SmartAccountStatus() {
           </div>
         </Card>
       )}
-
     </div>
   );
 }
-

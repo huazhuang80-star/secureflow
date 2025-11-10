@@ -7,7 +7,7 @@ import {
   createEscrowNotification,
   createMilestoneNotification,
 } from "@/contexts/notification-context";
-import { useSmartAccount } from "@/contexts/smart-account-context";
+// import { useSmartAccount } from "@/contexts/smart-account-context"; // Unused
 import {
   Card,
   CardContent,
@@ -17,25 +17,25 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+// import { Input } from "@/components/ui/input"; // Unused
+// import { Label } from "@/components/ui/label"; // Unused
 import { useToast } from "@/hooks/use-toast";
-import { FreelancerHeader } from "@/components/freelancer/freelancer-header";
+// import { FreelancerHeader } from "@/components/freelancer/freelancer-header"; // Unused
 import { FreelancerStats } from "@/components/freelancer/freelancer-stats";
-import { EscrowCard } from "@/components/freelancer/escrow-card";
-import { FreelancerLoading } from "@/components/freelancer/freelancer-loading";
+// import { EscrowCard } from "@/components/freelancer/escrow-card"; // Unused
+// import { FreelancerLoading } from "@/components/freelancer/freelancer-loading"; // Unused
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Progress } from "@/components/ui/progress"; // Unused
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogFooter,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog"; // Unused
+// import { Alert, AlertDescription } from "@/components/ui/alert"; // Unused
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Unused
 import {
   FileText,
   User,
@@ -43,7 +43,7 @@ import {
   CheckCircle,
   Calendar,
   Play,
-  RefreshCw,
+  // RefreshCw, // Unused
   Clock,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -126,7 +126,7 @@ export default function FreelancerPage() {
       fetchFreelancerEscrows();
     };
 
-    const handleMilestoneRejected = (event: any) => {
+    const handleMilestoneRejected = (_event: any) => {
       fetchFreelancerEscrows();
     };
 
@@ -324,7 +324,7 @@ export default function FreelancerPage() {
                             }
 
                             // Debug amount conversion
-                            const amountInTokens = formatAmount(amount);
+                            // const amountInTokens = formatAmount(amount); // Unused
                           } catch (proxyError) {
                             // Fallback to basic parsing
                             description = `Milestone ${index + 1}`;
@@ -473,14 +473,14 @@ export default function FreelancerPage() {
       const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW);
 
       // Get escrow details to debug
-      try {
-        const escrowSummary = await contract.call(
-          "get_escrow",
-          Number(escrowId)
-        );
-      } catch (debugError) {
-        console.error("Failed to get escrow details:", debugError);
-      }
+      // try {
+      //   const escrowSummary = await contract.call( // Unused
+      //     "get_escrow",
+      //     Number(escrowId)
+      //   );
+      // } catch (debugError) {
+      //   console.error("Failed to get escrow details:", debugError);
+      // }
 
       toast({
         title: "Starting work...",
@@ -488,12 +488,7 @@ export default function FreelancerPage() {
       });
 
       // Stellar: Use direct contract call
-      let txHash;
-      txHash = await contract.send(
-        "start_work",
-        Number(escrowId),
-        wallet.address
-      );
+      await contract.send("start_work", Number(escrowId), wallet.address);
 
       toast({
         title: "Work started!",
@@ -700,8 +695,7 @@ export default function FreelancerPage() {
       });
 
       // Stellar: Use direct contract call
-      let txHash;
-      txHash = await contract.send(
+      await contract.send(
         "submit_milestone",
         Number(escrowId),
         milestoneIndex,
@@ -709,80 +703,46 @@ export default function FreelancerPage() {
         wallet.address // beneficiary parameter
       );
 
-      // Wait for transaction confirmation
+      // Transaction is already confirmed via waitForConfirmation in web3-context
+      // For Stellar, we don't need to poll for receipts like Ethereum
+      // The transaction hash is returned after confirmation
       toast({
-        title: "Transaction submitted",
-        description: "Waiting for blockchain confirmation...",
+        title: "Milestone submitted!",
+        description: "Your milestone has been submitted for review",
       });
 
-      // Wait for transaction to be mined using polling
-      let receipt;
-      let attempts = 0;
-      const maxAttempts = 30; // 30 attempts * 2 seconds = 1 minute timeout
+      // Get client address from escrow data
+      const escrow = escrows.find((e) => e.id === escrowId);
+      const clientAddress = escrow?.payer;
 
-      while (attempts < maxAttempts) {
-        try {
-          receipt = await window.ethereum.request({
-            method: "eth_getTransactionReceipt",
-            params: [txHash],
-          });
+      // Add cross-wallet notification for milestone submission
+      addCrossWalletNotification(
+        createMilestoneNotification("submitted", escrowId, milestoneIndex, {
+          freelancerName:
+            wallet.address!.slice(0, 6) + "..." + wallet.address!.slice(-4),
+          projectTitle: escrow?.projectTitle || `Project #${escrowId}`,
+        }),
+        clientAddress, // Client address
+        wallet.address || undefined // Freelancer address
+      );
 
-          if (receipt) {
-            break;
-          }
-        } catch (error) {}
+      // Mark this milestone as submitted to prevent double submission
+      const milestoneKey = `${escrowId}-${milestoneIndex}`;
+      setSubmittedMilestones((prev) => new Set([...prev, milestoneKey]));
 
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
-        attempts++;
-      }
+      // Clear form
+      setMilestoneDescriptions((prev) => {
+        const updated = { ...prev };
+        delete updated[milestoneKey];
+        return updated;
+      });
+      setSelectedEscrowId(null);
 
-      if (!receipt) {
-        throw new Error(
-          "Transaction timeout - please check the blockchain explorer"
-        );
-      }
+      // Refresh escrows
+      await fetchFreelancerEscrows();
 
-      if (receipt.status === "0x1") {
-        toast({
-          title: "Milestone submitted!",
-          description: "Your milestone has been submitted for review",
-        });
-
-        // Get client address from escrow data
-        const escrow = escrows.find((e) => e.id === escrowId);
-        const clientAddress = escrow?.payer;
-
-        // Add cross-wallet notification for milestone submission
-        addCrossWalletNotification(
-          createMilestoneNotification("submitted", escrowId, milestoneIndex, {
-            freelancerName:
-              wallet.address!.slice(0, 6) + "..." + wallet.address!.slice(-4),
-            projectTitle: escrow?.projectTitle || `Project #${escrowId}`,
-          }),
-          clientAddress, // Client address
-          wallet.address || undefined // Freelancer address
-        );
-
-        // Mark this milestone as submitted to prevent double submission
-        const milestoneKey = `${escrowId}-${milestoneIndex}`;
-        setSubmittedMilestones((prev) => new Set([...prev, milestoneKey]));
-
-        // Clear form
-        setMilestoneDescriptions((prev) => {
-          const updated = { ...prev };
-          delete updated[milestoneKey];
-          return updated;
-        });
-        setSelectedEscrowId(null);
-
-        // Refresh escrows
-        await fetchFreelancerEscrows();
-
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent("milestoneSubmitted"));
-      } else {
-        throw new Error("Transaction failed on blockchain");
-      }
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent("milestoneSubmitted"));
     } catch (error) {
       toast({
         title: "Failed to submit milestone",
@@ -818,8 +778,7 @@ export default function FreelancerPage() {
       });
 
       // Stellar: Use direct contract call
-      let txHash;
-      txHash = await contract.send(
+      await contract.send(
         "submit_milestone", // Use submit_milestone for resubmission
         Number(escrowId),
         milestoneIndex,
@@ -827,78 +786,39 @@ export default function FreelancerPage() {
         wallet.address // beneficiary parameter
       );
 
+      // Transaction is already confirmed via waitForConfirmation in web3-context
+      // For Stellar, we don't need to poll for receipts like Ethereum
+      // The transaction hash is returned after confirmation
       toast({
-        title: "Milestone Resubmitted!",
-        description: "Your milestone has been resubmitted successfully",
+        title: "Milestone resubmitted!",
+        description: "Your milestone has been resubmitted for client review",
       });
 
-      // Wait for transaction confirmation
-      toast({
-        title: "Transaction submitted",
-        description: "Waiting for blockchain confirmation...",
-      });
+      // Get client address from escrow data
+      const escrow = escrows.find((e) => e.id === escrowId);
+      const clientAddress = escrow?.payer;
 
-      // Wait for transaction to be mined using polling
-      let receipt;
-      let attempts = 0;
-      const maxAttempts = 30; // 30 attempts * 2 seconds = 1 minute timeout
+      // Add notification for milestone resubmission (notify the client)
+      addNotification(
+        createMilestoneNotification("submitted", escrowId, milestoneIndex, {
+          freelancerName:
+            wallet.address!.slice(0, 6) + "..." + wallet.address!.slice(-4),
+          projectTitle: escrow?.projectTitle || `Project #${escrowId}`,
+        }),
+        clientAddress ? [clientAddress] : undefined // Notify the client
+      );
 
-      while (attempts < maxAttempts) {
-        try {
-          receipt = await window.ethereum.request({
-            method: "eth_getTransactionReceipt",
-            params: [txHash],
-          });
+      // Clear form and close dialog
+      setResubmitDescription("");
+      setShowResubmitDialog(false);
+      setSelectedResubmitEscrow(null);
+      setSelectedResubmitMilestone(null);
 
-          if (receipt) {
-            break;
-          }
-        } catch (error) {}
+      // Refresh escrows
+      await fetchFreelancerEscrows();
 
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
-        attempts++;
-      }
-
-      if (!receipt) {
-        throw new Error(
-          "Transaction timeout - please check the blockchain explorer"
-        );
-      }
-
-      if (receipt.status === "0x1") {
-        toast({
-          title: "Milestone resubmitted!",
-          description: "Your milestone has been resubmitted for client review",
-        });
-
-        // Get client address from escrow data
-        const escrow = escrows.find((e) => e.id === escrowId);
-        const clientAddress = escrow?.payer;
-
-        // Add notification for milestone resubmission (notify the client)
-        addNotification(
-          createMilestoneNotification("submitted", escrowId, milestoneIndex, {
-            freelancerName:
-              wallet.address!.slice(0, 6) + "..." + wallet.address!.slice(-4),
-            projectTitle: escrow?.projectTitle || `Project #${escrowId}`,
-          }),
-          clientAddress ? [clientAddress] : undefined // Notify the client
-        );
-
-        // Clear form and close dialog
-        setResubmitDescription("");
-        setShowResubmitDialog(false);
-        setSelectedResubmitEscrow(null);
-        setSelectedResubmitMilestone(null);
-
-        // Refresh escrows
-        await fetchFreelancerEscrows();
-
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent("milestoneResubmitted"));
-      } else {
-        throw new Error("Transaction failed on blockchain");
-      }
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent("milestoneResubmitted"));
     } catch (error) {
       toast({
         title: "Failed to resubmit milestone",
@@ -934,8 +854,7 @@ export default function FreelancerPage() {
       });
 
       // Stellar: Use direct contract call
-      let txHash;
-      txHash = await contract.send(
+      await contract.send(
         "dispute_milestone",
         Number(escrowId),
         milestoneIndex,
@@ -1360,12 +1279,12 @@ export default function FreelancerPage() {
                                   isApproved
                                     ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
                                     : isSubmitted
-                                    ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
-                                    : isCurrent
-                                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                                    : isBlocked
-                                    ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                                    : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                                      ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+                                      : isCurrent
+                                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                                        : isBlocked
+                                          ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                                          : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
                                 }`}
                               >
                                 <div className="flex items-center justify-between mb-2">

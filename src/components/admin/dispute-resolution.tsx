@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,10 +17,7 @@ import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
 
-import {
-  useNotifications,
-  createMilestoneNotification,
-} from "@/contexts/notification-context";
+import { useNotifications } from "@/contexts/notification-context";
 import {
   AlertTriangle,
   Clock,
@@ -30,7 +25,6 @@ import {
   DollarSign,
   Scale,
   CheckCircle,
-  XCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -56,7 +50,7 @@ export function DisputeResolution({
 }: DisputeResolutionProps) {
   const { wallet, getContract } = useWeb3();
   const { toast } = useToast();
-  const { addNotification, addCrossWalletNotification } = useNotifications();
+  const { addCrossWalletNotification } = useNotifications();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastDisputeCount, setLastDisputeCount] = useState(0);
@@ -89,11 +83,8 @@ export function DisputeResolution({
       // Check each escrow for disputes
       for (let escrowId = 1; escrowId < escrowCount; escrowId++) {
         try {
-          const escrowSummary = await contract.call(
-            "get_escrow",
-            escrowId,
-          );
-          const escrowStatus = Number(escrowSummary[3]); // status is at index 3
+          const escrowSummary = await contract.call("get_escrow", escrowId);
+          // const escrowStatus = Number(escrowSummary[3]); // status is at index 3 - unused
 
           // Get milestone details for this escrow (check all escrows, not just disputed ones)
           const milestoneCount = Number(escrowSummary[11]); // milestoneCount is at index 11
@@ -107,7 +98,7 @@ export function DisputeResolution({
               const milestone = await contract.call(
                 "milestones",
                 escrowId,
-                milestoneIndex,
+                milestoneIndex
               );
               const milestoneStatus = Number(milestone[2]); // status is at index 2
 
@@ -139,7 +130,7 @@ export function DisputeResolution({
                 const milestone = await contract.call(
                   "milestones",
                   escrowId,
-                  milestoneIndex,
+                  milestoneIndex
                 );
                 const milestoneStatus = Number(milestone[2]); // status is at index 2
 
@@ -217,7 +208,7 @@ export function DisputeResolution({
         "no-value",
         selectedDispute.escrowId,
         selectedDispute.milestoneIndex,
-        beneficiaryAmountWei,
+        beneficiaryAmountWei
       );
 
       toast({
@@ -240,7 +231,7 @@ export function DisputeResolution({
           },
         },
         selectedDispute.clientAddress,
-        selectedDispute.freelancerAddress,
+        selectedDispute.freelancerAddress
       );
 
       setResolutionDialogOpen(false);

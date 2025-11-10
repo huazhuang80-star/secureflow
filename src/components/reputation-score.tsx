@@ -1,5 +1,3 @@
-
-
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Award, TrendingUp } from "lucide-react";
@@ -14,7 +12,7 @@ interface ReputationScoreProps {
 }
 
 export function ReputationScore({
-  address,
+  // address, // Unused
   completedEscrows,
   totalVolume,
   className,

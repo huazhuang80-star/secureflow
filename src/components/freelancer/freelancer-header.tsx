@@ -1,7 +1,5 @@
-
-
 import { motion } from "framer-motion";
-import { User } from "lucide-react";
+// import { User } from "lucide-react"; // Unused
 
 export function FreelancerHeader() {
   return (

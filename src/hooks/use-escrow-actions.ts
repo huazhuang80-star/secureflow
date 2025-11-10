@@ -17,7 +17,7 @@ import {
   useExtendDeadline,
   useEmergencyRefund,
 } from "./use-escrows";
-import type { EscrowData } from "@/lib/web3/contract-service";
+// import type { EscrowData } from "@/lib/web3/contract-service"; // Unused
 import useWalletStore from "@/store/wallet.store";
 
 export function useEscrowActions() {
@@ -46,7 +46,13 @@ export function useEscrowActions() {
   }) => {
     setIsLoading(true);
     try {
-      await createEscrow.mutateAsync(params);
+      if (!address) {
+        throw new Error("Wallet not connected");
+      }
+      await createEscrow.mutateAsync({
+        ...params,
+        depositor: address,
+      });
       return true;
     } catch (error) {
       console.error("Error creating escrow:", error);

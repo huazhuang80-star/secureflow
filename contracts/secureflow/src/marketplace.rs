@@ -12,6 +12,8 @@ pub fn apply_to_job(
     cover_letter: String,
     proposed_timeline: u32,
 ) -> Result<(), Error> {
+    // Require auth from the freelancer address
+    // The freelancer must sign the transaction
     freelancer.require_auth();
 
     // Check if job creation is paused

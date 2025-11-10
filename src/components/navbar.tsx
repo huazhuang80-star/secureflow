@@ -41,15 +41,15 @@ export function Navbar() {
   }, [mobileMenuOpen]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        mobileMenuOpen &&
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(event.target as Node)
-      ) {
-        setMobileMenuOpen(false);
-      }
-    };
+    // const handleClickOutside = (event: MouseEvent) => { // Unused
+    //   if (
+    //     mobileMenuOpen &&
+    //     mobileMenuRef.current &&
+    //     !mobileMenuRef.current.contains(event.target as Node)
+    //   ) {
+    //     setMobileMenuOpen(false);
+    //   }
+    // };
 
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && mobileMenuOpen) {
