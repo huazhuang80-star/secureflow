@@ -16,6 +16,14 @@ import { JobsStats } from "@/components/jobs/jobs-stats";
 import { JobCard } from "@/components/jobs/job-card";
 import { ApplicationDialog } from "@/components/jobs/application-dialog";
 import { JobsLoading } from "@/components/jobs/jobs-loading";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 export default function JobsPage() {
   const { wallet, getContract } = useWeb3();
@@ -24,6 +32,9 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Escrow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "active" | "completed" | "disputed"
+  >("all");
   const [selectedJob, setSelectedJob] = useState<Escrow | null>(null);
   // const [coverLetter, setCoverLetter] = useState(""); // Unused - handled in dialog
   // const [proposedTimeline, setProposedTimeline] = useState(""); // Unused - handled in dialog
@@ -345,7 +356,7 @@ export default function JobsPage() {
               // Store application status from blockchain check
               setHasApplied((prev) => {
                 const newState = {
-                ...prev,
+                  ...prev,
                   [job.id]: userHasApplied, // Always use blockchain result
                 };
                 console.log(
@@ -430,8 +441,8 @@ export default function JobsPage() {
         try {
           const hasAppliedResult = await contractService.hasUserApplied(
             Number.parseInt(job.id, 10),
-          wallet.address
-        );
+            wallet.address
+          );
           userHasApplied = hasAppliedResult;
           console.log(
             `[handleApply] User ${wallet.address} has applied to job ${job.id}:`,
@@ -516,15 +527,21 @@ export default function JobsPage() {
     }
   };
 
-  const filteredJobs = jobs.filter(
-    (job) =>
+  const filteredJobs = jobs.filter((job) => {
+    // Search filter
+    const matchesSearch =
       job.projectDescription
         ?.toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       job.milestones.some((m) =>
         m.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-  );
+      );
+
+    // Status filter
+    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   if (!wallet.isConnected || loading) {
     return <JobsLoading isConnected={wallet.isConnected} />;
@@ -545,6 +562,30 @@ export default function JobsPage() {
           ongoingProjectsCount={ongoingProjectsCount}
         />
 
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <Label htmlFor="status-filter" className="mb-2 block">
+              Filter by Status
+            </Label>
+            <Select
+              value={statusFilter}
+              onValueChange={(value: any) => setStatusFilter(value)}
+            >
+              <SelectTrigger id="status-filter" className="w-full">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="disputed">Disputed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Jobs List */}
         <div className="space-y-6">
           {filteredJobs.length === 0 ? (
@@ -564,15 +605,15 @@ export default function JobsPage() {
                 hasApplied
               );
               return (
-              <JobCard
-                key={job.id}
-                job={job}
-                index={index}
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  index={index}
                   hasApplied={jobHasApplied}
-                isContractPaused={isContractPaused}
-                ongoingProjectsCount={ongoingProjectsCount}
-                onApply={setSelectedJob}
-              />
+                  isContractPaused={isContractPaused}
+                  ongoingProjectsCount={ongoingProjectsCount}
+                  onApply={setSelectedJob}
+                />
               );
             })
           )}

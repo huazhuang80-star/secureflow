@@ -25,6 +25,14 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { EscrowCard } from "@/components/dashboard/escrow-card";
 import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 export default function DashboardPage() {
   const { wallet, getContract } = useWeb3();
@@ -32,6 +40,12 @@ export default function DashboardPage() {
   const { addCrossWalletNotification } = useNotifications();
   const [escrows, setEscrows] = useState<Escrow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "active" | "completed" | "disputed"
+  >("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "client" | "freelancer">(
+    "all"
+  );
   const [expandedEscrow, setExpandedEscrow] = useState<string | null>(null);
   const [submittingMilestone, setSubmittingMilestone] = useState<string | null>(
     null
@@ -828,6 +842,48 @@ export default function DashboardPage() {
         <DashboardHeader />
         <DashboardStats escrows={escrows} />
 
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <Label htmlFor="status-filter" className="mb-2 block">
+              Filter by Status
+            </Label>
+            <Select
+              value={statusFilter}
+              onValueChange={(value: any) => setStatusFilter(value)}
+            >
+              <SelectTrigger id="status-filter" className="w-full">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="disputed">Disputed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1">
+            <Label htmlFor="role-filter" className="mb-2 block">
+              Filter by Role
+            </Label>
+            <Select
+              value={roleFilter}
+              onValueChange={(value: any) => setRoleFilter(value)}
+            >
+              <SelectTrigger id="role-filter" className="w-full">
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="client">As Client</SelectItem>
+                <SelectItem value="freelancer">As Freelancer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {escrows.length === 0 ? (
           <Card className="glass border-muted p-12 text-center">
             <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -838,39 +894,53 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {escrows.map((escrow, index) => (
-              <EscrowCard
-                key={escrow.id}
-                escrow={escrow}
-                index={index}
-                expandedEscrow={expandedEscrow}
-                submittingMilestone={
-                  submittingMilestone === escrow.id ? "true" : "false"
-                }
-                onToggleExpanded={() =>
-                  setExpandedEscrow(
-                    expandedEscrow === escrow.id ? null : escrow.id
-                  )
-                }
-                onApproveMilestone={approveMilestone}
-                onRejectMilestone={(
-                  escrowId: string,
-                  milestoneIndex: number
-                ) => {
-                  // For now, use empty reason - this should be handled by the component
-                  rejectMilestone(
-                    escrowId,
-                    milestoneIndex,
-                    "No reason provided"
-                  );
-                }}
-                onDisputeMilestone={disputeMilestone}
-                onStartWork={startWork}
-                onDispute={openDispute}
-                calculateDaysLeft={calculateDaysLeft}
-                getDaysLeftMessage={getDaysLeftMessage}
-              />
-            ))}
+            {escrows
+              .filter((escrow) => {
+                // Status filter
+                const matchesStatus =
+                  statusFilter === "all" || escrow.status === statusFilter;
+
+                // Role filter
+                const matchesRole =
+                  roleFilter === "all" ||
+                  (roleFilter === "client" && escrow.isClient) ||
+                  (roleFilter === "freelancer" && escrow.isFreelancer);
+
+                return matchesStatus && matchesRole;
+              })
+              .map((escrow, index) => (
+                <EscrowCard
+                  key={escrow.id}
+                  escrow={escrow}
+                  index={index}
+                  expandedEscrow={expandedEscrow}
+                  submittingMilestone={
+                    submittingMilestone === escrow.id ? "true" : "false"
+                  }
+                  onToggleExpanded={() =>
+                    setExpandedEscrow(
+                      expandedEscrow === escrow.id ? null : escrow.id
+                    )
+                  }
+                  onApproveMilestone={approveMilestone}
+                  onRejectMilestone={(
+                    escrowId: string,
+                    milestoneIndex: number
+                  ) => {
+                    // For now, use empty reason - this should be handled by the component
+                    rejectMilestone(
+                      escrowId,
+                      milestoneIndex,
+                      "No reason provided"
+                    );
+                  }}
+                  onDisputeMilestone={disputeMilestone}
+                  onStartWork={startWork}
+                  onDispute={openDispute}
+                  calculateDaysLeft={calculateDaysLeft}
+                  getDaysLeftMessage={getDaysLeftMessage}
+                />
+              ))}
           </div>
         )}
       </div>
