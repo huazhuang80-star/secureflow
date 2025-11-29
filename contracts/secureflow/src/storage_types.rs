@@ -37,6 +37,7 @@ pub enum SecureFlowError {
     TooManyApplications = 1303,
     OnlyDepositor = 1304,
     FreelancerNotApplied = 1305,
+    AlreadyApplied = 1306,
     
     // Milestone errors (1400-1499)
     InvalidMilestone = 1400,

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+target/
+build/
+
+# Git
+.git/
+
+# Rust build artifacts
+target/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.*
+
+# Vercel
+.vercel/
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+.temp/
+.tmp/
+
+# Stellar/Soroban
+.soroban/
+.config/
+.stellar/
+
+
+

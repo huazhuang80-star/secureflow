@@ -40,15 +40,36 @@ pub fn apply_to_job(
     }
 
     // Check if already applied
-    // TODO: Implement has_applied check
+    if has_applied(env, escrow_id, freelancer.clone()) {
+        return Err(Error::from_contract_error(SecureFlowError::AlreadyApplied as u32));
+    }
 
-    // Get current application count
-    let application_count = 0u32;
-    // Count applications (simplified - would need to track this better)
+    // Find the first available slot and count existing applications
+    env.storage()
+        .instance()
+        .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
     
+    let mut application_count = 0u32;
+    let mut next_available_index: Option<u32> = None;
+    
+    // Check all possible application indices to find first empty slot
+    for app_index in 0..MAX_APPLICATIONS {
+        let key = DataKey::Application(escrow_id, app_index);
+        if let Some(_existing_app) = env.storage().instance().get::<DataKey, Application>(&key) {
+            application_count += 1;
+        } else if next_available_index.is_none() {
+            next_available_index = Some(app_index);
+        }
+    }
+    
+    // Check if we've reached max applications
     if application_count >= MAX_APPLICATIONS {
         return Err(Error::from_contract_error(SecureFlowError::TooManyApplications as u32));
     }
+    
+    // Get the next available index (should always be Some at this point)
+    let application_index = next_available_index
+        .ok_or_else(|| Error::from_contract_error(SecureFlowError::TooManyApplications as u32))?;
 
     // Create application
     let application = Application {
@@ -58,13 +79,10 @@ pub fn apply_to_job(
         applied_at: env.ledger().sequence(),
     };
 
-    // Save application
+    // Save application at the next available index
     env.storage()
         .instance()
-        .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
-    env.storage()
-        .instance()
-        .set(&DataKey::Application(escrow_id, application_count), &application);
+        .set(&DataKey::Application(escrow_id, application_index), &application);
     
     Ok(())
 }
