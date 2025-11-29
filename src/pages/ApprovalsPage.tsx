@@ -16,6 +16,7 @@ import { ApprovalsHeader } from "@/components/approvals/approvals-header";
 import { ApprovalsStats } from "@/components/approvals/approvals-stats";
 import { JobCard } from "@/components/approvals/job-card";
 import { ApprovalsLoading } from "@/components/approvals/approvals-loading";
+import { BadgeDisplay, RatingDisplay } from "@/components/rating/badge-display";
 
 interface JobWithApplications extends Escrow {
   applications: Application[];
@@ -521,11 +522,23 @@ export default function ApprovalsPage() {
                     <Card key={index} className="p-4">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">Freelancer Address:</p>
-                            <p className="text-sm text-muted-foreground font-mono">
-                              {application.freelancerAddress}
-                            </p>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <p className="font-medium">Freelancer Address:</p>
+                              <p className="text-sm text-muted-foreground font-mono">
+                                {application.freelancerAddress}
+                              </p>
+                              {application.badge && (
+                                <BadgeDisplay badge={application.badge} />
+                              )}
+                              {(application.averageRating !== undefined ||
+                                application.ratingCount !== undefined) && (
+                                <RatingDisplay
+                                  averageRating={application.averageRating}
+                                  ratingCount={application.ratingCount}
+                                />
+                              )}
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <button
