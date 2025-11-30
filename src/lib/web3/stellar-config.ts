@@ -19,9 +19,9 @@ export const STELLAR_NETWORKS = {
 
 // Contract IDs (will be set after deployment)
 // Fallback to the deployed contract ID if env variable is not set
-// Testnet contract ID (deployed on testnet) - Updated with reject and dispute functions
+// Testnet contract ID (deployed on testnet) - Updated with rating and badge system
 const DEFAULT_CONTRACT_ID =
-  "CB2EC4WGP7M4KCW75HZFX5EFRHES6PL5OJYERZSOG7OFPDW6LCWAZKPV";
+  "CCZARIWLZX6VHU2PVFVBTTYZ4B4R4K74NN47KNALXXRTGG4SPT7BTVJ7";
 
 export const CONTRACTS = {
   SECUREFLOW_ESCROW:
