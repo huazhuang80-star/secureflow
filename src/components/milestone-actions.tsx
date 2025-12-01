@@ -74,14 +74,6 @@ export function MilestoneActions({
   const canApproveMilestone = () => {
     const canApprove =
       milestone.status === "submitted" && isPayer && escrowStatus === "active";
-    console.log("[MilestoneActions] canApproveMilestone check:", {
-      milestoneStatus: milestone.status,
-      isPayer,
-      escrowStatus,
-      canApprove,
-      escrowId,
-      milestoneIndex,
-    });
     return canApprove;
   };
 

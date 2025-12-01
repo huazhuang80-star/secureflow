@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
 import { contractService } from "@/lib/web3/contract-service";
 import { useToast } from "@/hooks/use-toast";
+import { useWeb3 } from "@/contexts/web3-context";
 
 interface RatingDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function RatingDialog({
   const [review, setReview] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const { wallet } = useWeb3();
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -56,9 +58,23 @@ export function RatingDialog({
       return;
     }
 
+    if (!wallet.isConnected || !wallet.address) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to submit a rating.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await contractService.submitRating(escrowId, rating, review);
+      await contractService.submitRating(
+        escrowId,
+        rating,
+        review,
+        wallet.address || undefined
+      );
       toast({
         title: "Rating Submitted",
         description: "Thank you for your feedback!",

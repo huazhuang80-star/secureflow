@@ -948,12 +948,33 @@ export class ContractService {
   async submitRating(
     escrowId: number,
     rating: number,
-    review: string
+    review: string,
+    walletAddress?: string
   ): Promise<string> {
     try {
-      const walletAddress = useWalletStore.getState().address;
-      if (!walletAddress) {
-        throw new Error("Wallet not connected");
+      // Use provided wallet address, or fallback to store
+      let address = walletAddress;
+      if (!address) {
+        const walletState = useWalletStore.getState();
+        address = walletState.address;
+      }
+
+      if (!address) {
+        // Check localStorage for walletId as fallback
+        const walletId =
+          typeof window !== "undefined"
+            ? localStorage.getItem("walletId")
+            : null;
+        if (!walletId) {
+          throw new Error(
+            "Wallet not connected. Please connect your wallet first."
+          );
+        }
+        // If we have walletId but no address, try to get it from the wallet store
+        // This is a fallback - ideally the address should be passed in
+        throw new Error(
+          "Wallet address not found. Please reconnect your wallet."
+        );
       }
 
       const { Contract, nativeToScVal, TransactionBuilder, Operation, xdr } =
@@ -975,7 +996,7 @@ export class ContractService {
             nativeToScVal(escrowId, { type: "u32" }),
             nativeToScVal(rating, { type: "u32" }),
             nativeToScVal(review, { type: "string" }),
-            nativeToScVal(walletAddress, { type: "address" })
+            nativeToScVal(address, { type: "address" })
           )
         )
         .setTimeout(30)
@@ -1005,7 +1026,7 @@ export class ContractService {
       if (authEntries && authEntries.length > 0) {
         const signedAuthEntries = await signAuthEntries(
           authEntries as any[],
-          walletAddress
+          address
         );
 
         const parsedSignedAuth = signedAuthEntries.map((signed: string) =>
@@ -1023,7 +1044,7 @@ export class ContractService {
               auth: parsedSignedAuth,
             } as any);
 
-            const freshAccount = await this.rpcServer.getAccount(walletAddress);
+            const freshAccount = await this.rpcServer.getAccount(address);
             const newTx = new TransactionBuilder(freshAccount, {
               fee: prepared.fee,
               networkPassphrase: this.network.networkPassphrase,
@@ -1035,7 +1056,7 @@ export class ContractService {
             const newPrepared = await this.rpcServer.prepareTransaction(newTx);
             signedTxXdr = await signTransaction({
               unsignedTransaction: newPrepared.toXDR(),
-              address: walletAddress,
+              address: address,
             });
           } else {
             throw new Error("Expected invokeHostFunction operation");
@@ -1046,7 +1067,7 @@ export class ContractService {
       } else {
         signedTxXdr = await signTransaction({
           unsignedTransaction: prepared.toXDR(),
-          address: walletAddress,
+          address: address,
         });
       }
 
@@ -1117,13 +1138,16 @@ export class ContractService {
         const retval = (simulation.result as any).retval;
         if (retval) {
           const rating = scValToNative(retval as xdr.ScVal) as any;
+          if (!rating || rating === null) {
+            return null;
+          }
           return {
-            escrowId: rating.escrow_id || rating.escrowId,
-            freelancer: rating.freelancer,
-            client: rating.client,
-            rating: rating.rating,
-            review: rating.review,
-            ratedAt: rating.rated_at || rating.ratedAt,
+            escrowId: rating.escrow_id || rating.escrowId || escrowId,
+            freelancer: rating.freelancer || "",
+            client: rating.client || "",
+            rating: rating.rating || 0,
+            review: rating.review || "",
+            ratedAt: rating.rated_at || rating.ratedAt || 0,
           };
         }
       }

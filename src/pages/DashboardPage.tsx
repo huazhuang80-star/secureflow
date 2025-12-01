@@ -998,7 +998,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen py-12 relative">
+      {/* Spinner overlay when refreshing */}
+      {isRefreshing && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Refreshing data...</p>
+          </div>
+        </div>
+      )}
       <div className="container mx-auto px-4">
         <div className="mb-8 flex items-start justify-between">
           <div>
