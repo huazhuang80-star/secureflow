@@ -12,6 +12,9 @@ export interface Milestone {
   approvedAt?: number;
   rejectionReason?: string;
   disputeReason?: string;
+  resolvedAt?: number;
+  resolvedBy?: string;
+  resolutionAmount?: string; // Amount paid to beneficiary in resolution (0 = client wins, >0 = freelancer wins)
 }
 
 export interface Escrow {

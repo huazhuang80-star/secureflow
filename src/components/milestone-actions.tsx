@@ -38,6 +38,8 @@ interface MilestoneActionsProps {
   showSubmitButton?: boolean; // New prop to control submit button visibility
   payerAddress?: string; // Client address for notifications
   beneficiaryAddress?: string; // Freelancer address for notifications
+  escrowReleasedAmount?: string; // Total amount released in escrow (to determine dispute winner)
+  escrowTotalAmount?: string; // Total escrow amount
 }
 
 export function MilestoneActions({
@@ -52,6 +54,8 @@ export function MilestoneActions({
   // showSubmitButton = true, // Unused
   // payerAddress, // Unused
   // beneficiaryAddress, // Unused
+  escrowReleasedAmount,
+  escrowTotalAmount,
 }: MilestoneActionsProps) {
   const { wallet, getContract } = useWeb3();
   const { toast } = useToast();
@@ -386,11 +390,60 @@ export function MilestoneActions({
           </div>
         )}
 
-        {/* Resolved Status - Show resolved badge */}
+        {/* Resolved Status - Show resolved badge with winner info */}
         {milestone.status === "resolved" && (
-          <div className="flex items-center gap-2 text-blue-600">
-            <CheckCircle2 className="h-4 w-4" />
-            <span className="text-sm font-medium">Resolved</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-blue-600">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="text-sm font-medium">Resolved</span>
+            </div>
+            {/* Determine winner based on resolution amount or escrow state */}
+            {(() => {
+              // If we have resolution amount, use it directly
+              if (milestone.resolutionAmount !== undefined) {
+                const resolutionAmount = Number(milestone.resolutionAmount);
+                return (
+                  <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 p-2 rounded border">
+                    {resolutionAmount > 0 ? (
+                      <span className="text-green-600 dark:text-green-400">
+                        <strong>Freelancer won:</strong>{" "}
+                        {(resolutionAmount / 1e7).toFixed(2)} tokens awarded
+                      </span>
+                    ) : (
+                      <span className="text-orange-600 dark:text-orange-400">
+                        <strong>Client won:</strong> Full refund issued
+                      </span>
+                    )}
+                  </div>
+                );
+              }
+              // Otherwise, infer from escrow state
+              if (escrowReleasedAmount && escrowTotalAmount) {
+                const released = Number(escrowReleasedAmount);
+                const total = Number(escrowTotalAmount);
+                const milestoneAmount = Number(milestone.amount);
+                // If released amount is close to milestone amount, freelancer likely won
+                // If escrow was refunded (released < milestone), client won
+                if (released >= milestoneAmount * 0.9) {
+                  return (
+                    <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 p-2 rounded border">
+                      <span className="text-green-600 dark:text-green-400">
+                        <strong>Freelancer won:</strong> Payment released
+                      </span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 p-2 rounded border">
+                      <span className="text-orange-600 dark:text-orange-400">
+                        <strong>Client won:</strong> Refund issued
+                      </span>
+                    </div>
+                  );
+                }
+              }
+              return null;
+            })()}
           </div>
         )}
 

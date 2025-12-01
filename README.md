@@ -52,11 +52,17 @@ SecureFlow is a blockchain-powered freelancer marketplace that revolutionizes ho
 - 💼 **Job Marketplace**: Post open jobs or create direct contracts with known freelancers
 - 👥 **Application System**: Freelancers can apply to open jobs with cover letters and timelines
 - ⚖️ **Dispute Resolution**: Multi-arbiter system with admin oversight for fair conflict resolution
+  - **Resolution Display**: Both clients and freelancers can see who won a dispute on their job cards
+  - **Transparent Outcomes**: Clear indication of resolution results (freelancer payment or client refund)
 - 💰 **Refund Protection**: Automatic refunds after deadlines with emergency mechanisms
-- ⭐ **Reputation System**: Build trust through on-chain reputation scores
+- ⭐ **Reputation & Rating System**: Build trust through on-chain reputation scores
+  - **Client Ratings**: Clients can rate freelancers after project completion (1-5 stars with reviews)
+  - **Badge Tiers**: Freelancers earn badges (Beginner, Intermediate, Advanced, Expert) based on completed projects
+  - **Average Ratings**: Display average ratings and review counts for freelancers
 - 💎 **Multi-Token Support**: Use native XLM or any whitelisted token
 - ⏰ **Deadline Management**: Flexible deadlines with extension capabilities
 - 🛡️ **Admin Controls**: Platform management with pause/unpause capabilities
+- 🔄 **Milestone Resubmission**: Freelancers can resubmit rejected milestones with improvements
 
 ### Security Features
 
@@ -138,11 +144,13 @@ Client has three options for each milestone:
   - Freelancer's reputation increases
 
 - **❌ Reject**:
-  - Client rejects the milestone
+  - Client rejects the milestone with feedback
   - Milestone status changes to `Rejected`
-  - Work can be resubmitted or contract can be terminated
+  - Freelancer can resubmit the milestone with improvements
+  - Rejection reason is stored and displayed to the freelancer
 
 - **⚖️ Dispute**:
+  - Either party (client or freelancer) can dispute a milestone
   - Client raises a dispute with a reason
   - Milestone status changes to `Disputed`
   - Admin and arbiters are notified
@@ -153,20 +161,26 @@ Client has three options for each milestone:
 When a dispute is raised:
 
 - **Admin Review**: Platform admin reviews the dispute
-- **Arbiter Assignment**: Admin can delegate additional arbiters if needed
-- **Multi-Arbiter Voting**: Multiple arbiters vote on the resolution
-- **Required Confirmations**: Resolution requires the specified number of confirmations
-- **Final Decision**:
-  - If approved: Payment is released
-  - If rejected: Funds can be refunded or work can be revised
+- **Arbiter Assignment**: Admin can authorize additional arbiters if needed
+- **Resolution Process**: Admin resolves the dispute by determining payment split
+  - Sets amount to be paid to freelancer (0 = full refund to client, >0 = partial/full payment to freelancer)
+- **Resolution Display**:
+  - Both client and freelancer see the resolution outcome on their job cards
+  - Clear indication of who won: "Freelancer won" with amount or "Client won - Full refund issued"
+  - Transparent display of resolution results for accountability
 
-#### 7. **Payment & Completion** 💰
+#### 7. **Payment & Completion** 💰⭐
 
 - **Automatic Release**: Approved milestones trigger automatic payments
 - **Partial Payments**: Each milestone is paid individually
 - **Platform Fees**: Fees are automatically deducted and sent to fee collector
-- **Completion**: When all milestones are approved, the contract is marked as `Released`
+- **Completion**: When all milestones are approved, the contract is marked as `Completed`
 - **Reputation Update**: Both parties' reputation scores are updated
+- **Client Rating**:
+  - After project completion, clients can rate freelancers (1-5 stars)
+  - Written reviews are stored on-chain
+  - Ratings affect freelancer's average rating and badge tier
+  - Rating data is displayed on freelancer profiles and job applications
 
 #### 8. **Refunds** 💸
 

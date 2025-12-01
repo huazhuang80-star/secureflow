@@ -1581,6 +1581,79 @@ export default function FreelancerPage() {
                                     </div>
                                   )}
 
+                                  {/* Show resolved status with winner info */}
+                                  {milestone.status === "resolved" && (
+                                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Badge className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200">
+                                          Resolved
+                                        </Badge>
+                                      </div>
+                                      {(() => {
+                                        // Determine winner based on resolution amount or escrow state
+                                        if (
+                                          milestone.resolutionAmount !==
+                                          undefined
+                                        ) {
+                                          const resolutionAmount = Number(
+                                            milestone.resolutionAmount
+                                          );
+                                          return (
+                                            <div className="text-sm">
+                                              {resolutionAmount > 0 ? (
+                                                <p className="text-green-600 dark:text-green-400 font-medium">
+                                                  ✅ You won!{" "}
+                                                  {(
+                                                    resolutionAmount / 1e7
+                                                  ).toFixed(2)}{" "}
+                                                  tokens awarded
+                                                </p>
+                                              ) : (
+                                                <p className="text-orange-600 dark:text-orange-400 font-medium">
+                                                  ❌ Client won - Full refund
+                                                  issued
+                                                </p>
+                                              )}
+                                            </div>
+                                          );
+                                        }
+                                        // Infer from escrow state
+                                        if (
+                                          escrow.releasedAmount &&
+                                          escrow.totalAmount
+                                        ) {
+                                          const released = Number(
+                                            escrow.releasedAmount
+                                          );
+                                          const milestoneAmount = Number(
+                                            milestone.amount
+                                          );
+                                          if (
+                                            released >=
+                                            milestoneAmount * 0.9
+                                          ) {
+                                            return (
+                                              <p className="text-green-600 dark:text-green-400 font-medium text-sm">
+                                                ✅ You won! Payment released
+                                              </p>
+                                            );
+                                          } else {
+                                            return (
+                                              <p className="text-orange-600 dark:text-orange-400 font-medium text-sm">
+                                                ❌ Client won - Refund issued
+                                              </p>
+                                            );
+                                          }
+                                        }
+                                        return (
+                                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                                            Dispute has been resolved by admin
+                                          </p>
+                                        );
+                                      })()}
+                                    </div>
+                                  )}
+
                                   {/* Show disputed status if milestone is disputed */}
                                   {milestone.status === "disputed" && (
                                     <div className="mt-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">

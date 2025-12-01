@@ -384,6 +384,16 @@ export default function DashboardPage() {
                           1000
                       : undefined;
 
+                  // Get resolution data if milestone is resolved
+                  const resolvedAtLedger = m.resolved_at || 0;
+                  const resolvedAt =
+                    resolvedAtLedger > 0
+                      ? Date.now() -
+                        (currentLedger - resolvedAtLedger) *
+                          SECONDS_PER_LEDGER *
+                          1000
+                      : undefined;
+
                   return {
                     description: m.description || "",
                     amount: m.amount?.toString() || "0",
@@ -392,6 +402,10 @@ export default function DashboardPage() {
                     approvedAt,
                     disputeReason: m.dispute_reason || undefined,
                     rejectionReason: m.rejection_reason || undefined,
+                    resolvedAt,
+                    resolvedBy: m.resolved_by || undefined,
+                    resolutionAmount:
+                      m.resolution_amount?.toString() || undefined,
                   };
                 } catch (error) {
                   console.error(

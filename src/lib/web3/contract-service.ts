@@ -685,6 +685,9 @@ export class ContractService {
               disputed_by: m.disputed_by || m[6] || undefined,
               dispute_reason: m.dispute_reason || m[7] || undefined,
               rejection_reason: m.rejection_reason || m[8] || undefined,
+              resolved_at: m.resolved_at || m[9] || 0,
+              resolved_by: m.resolved_by || m[10] || undefined,
+              resolution_amount: m.resolution_amount || m[11] || undefined,
             }));
           }
         } catch (e) {

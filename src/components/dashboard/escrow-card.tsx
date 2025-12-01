@@ -263,6 +263,8 @@ export function EscrowCard({
                           showSubmitButton={false} // Hide submit buttons on dashboard
                           payerAddress={escrow.payer} // Client address for notifications
                           beneficiaryAddress={escrow.beneficiary} // Freelancer address for notifications
+                          escrowReleasedAmount={escrow.releasedAmount}
+                          escrowTotalAmount={escrow.totalAmount}
                           onSuccess={async () => {
                             // Refresh the escrow data
                             window.dispatchEvent(
@@ -324,10 +326,22 @@ export function EscrowCard({
           onOpenChange={setShowRatingDialog}
           escrowId={Number.parseInt(escrow.id, 10)}
           freelancerAddress={escrow.beneficiary}
-          onRatingSubmitted={() => {
+          onRatingSubmitted={async () => {
             setHasRating(true);
-            // Refresh to show the rating
-            window.location.reload();
+            // Refresh rating data for this escrow only
+            try {
+              const rating = await contractService.getRating(
+                Number.parseInt(escrow.id, 10)
+              );
+              if (rating) {
+                setExistingRating({
+                  rating: rating.rating,
+                  review: rating.review,
+                });
+              }
+            } catch (error) {
+              console.error("Error fetching rating:", error);
+            }
           }}
         />
       )}
