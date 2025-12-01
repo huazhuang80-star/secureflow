@@ -86,6 +86,7 @@ interface Milestone {
   approvedAt?: number;
   disputeReason?: string;
   rejectionReason?: string;
+  resolutionAmount?: string; // Amount paid to beneficiary in resolution (0 = client wins, >0 = freelancer wins)
 }
 
 export default function FreelancerPage() {

@@ -420,7 +420,6 @@ export function MilestoneActions({
               // Otherwise, infer from escrow state
               if (escrowReleasedAmount && escrowTotalAmount) {
                 const released = Number(escrowReleasedAmount);
-                const total = Number(escrowTotalAmount);
                 const milestoneAmount = Number(milestone.amount);
                 // If released amount is close to milestone amount, freelancer likely won
                 // If escrow was refunded (released < milestone), client won

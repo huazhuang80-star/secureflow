@@ -3,8 +3,6 @@ import {
   DollarSign,
   FileText,
   CheckCircle,
-  Clock,
-  Pause,
   AlertTriangle,
   Star,
   Award,
@@ -54,30 +52,6 @@ export function FreelancerStats({
     if (escrow.milestones.length === 0) return false;
     return escrow.milestones.every(
       (milestone) => milestone.status === "approved"
-    );
-  }).length;
-
-  const activeProjects = escrows.filter((escrow) => {
-    // A project is active if it has milestones but not all are approved AND not terminated
-    if (escrow.milestones.length === 0) return false;
-    if (isEscrowTerminated(escrow)) return false; // Exclude terminated projects
-
-    const hasApprovedMilestones = escrow.milestones.some(
-      (milestone) => milestone.status === "approved"
-    );
-    const allMilestonesApproved = escrow.milestones.every(
-      (milestone) => milestone.status === "approved"
-    );
-    return hasApprovedMilestones && !allMilestonesApproved;
-  }).length;
-
-  const pendingProjects = escrows.filter((escrow) => {
-    // A project is pending if no milestones have been approved yet AND not terminated
-    if (escrow.milestones.length === 0) return false;
-    if (isEscrowTerminated(escrow)) return false; // Exclude terminated projects
-
-    return escrow.milestones.every(
-      (milestone) => milestone.status === "pending"
     );
   }).length;
 

@@ -987,7 +987,7 @@ export class ContractService {
       );
 
       const contract = new Contract(this.contractId);
-      const sourceAccount = await this.rpcServer.getAccount(walletAddress);
+      const sourceAccount = await this.rpcServer.getAccount(address);
 
       const tx = new TransactionBuilder(sourceAccount, {
         fee: "100",
@@ -2693,7 +2693,7 @@ export class ContractService {
             const newOp = Operation.invokeHostFunction({
               function: hostFn as xdr.HostFunction,
               auth: parsedSignedAuth,
-            });
+            } as any);
 
             const newTx = new TransactionBuilder(sourceAccount, {
               fee: "100",

@@ -1001,10 +1001,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen py-12">
         <div className="container mx-auto px-4">
-          <DashboardHeader
-            onRefresh={handleRefresh}
-            isRefreshing={isRefreshing}
-          />
+          <DashboardHeader />
           <DashboardLoading isConnected={wallet.isConnected} />
         </div>
       </div>
@@ -1121,9 +1118,10 @@ export default function DashboardPage() {
                 // Search filter
                 const matchesSearch =
                   !searchQuery ||
-                  escrow.projectDescription
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase());
+                  (escrow.projectDescription &&
+                    escrow.projectDescription
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()));
 
                 return matchesStatus && matchesSearch;
               })
