@@ -43,6 +43,7 @@
 
   /* Added glassmorphism variables */
   --glass-bg: oklch(0.98 0.008 240 / 0.7);
+  --glass-bg-thick: oklch(0.98 0.008 240 / 0.88);
   --glass-border: oklch(0.88 0.01 240 / 0.3);
   --glow-primary: oklch(0.55 0.18 240 / 0.3);
   --glow-accent: oklch(0.65 0.2 200 / 0.3);
@@ -84,6 +85,7 @@
   --sidebar-ring: oklch(0.65 0.2 240);
 
   --glass-bg: oklch(0.15 0.025 240 / 0.7);
+  --glass-bg-thick: oklch(0.15 0.025 240 / 0.88);
   --glass-border: oklch(0.35 0.04 240 / 0.3);
   --glow-primary: oklch(0.65 0.2 240 / 0.4);
   --glow-accent: oklch(0.7 0.22 200 / 0.4);
@@ -143,6 +145,13 @@
 @layer utilities {
   .glass {
     background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-thick {
+    background: var(--glass-bg-thick);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);

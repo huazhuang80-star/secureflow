@@ -89,7 +89,7 @@ export function ApplicationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass w-[min(92vw,56rem)] max-w-4xl p-7">
+      <DialogContent className="glass-thick w-[min(92vw,56rem)] max-w-4xl p-7">
         <DialogHeader className="space-y-2">
           <DialogTitle className="leading-snug">
             Apply to {job?.projectTitle?.trim() || `Job #${job?.id || "Unknown"}`}
