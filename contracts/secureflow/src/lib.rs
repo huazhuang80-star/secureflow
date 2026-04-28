@@ -351,6 +351,27 @@ impl SecureFlow {
         ratings::get_completed_escrows(&env, user)
     }
 
+    /// Submit a rating for the client (called by freelancer after completion)
+    pub fn submit_client_rating(
+        env: Env,
+        escrow_id: u32,
+        rating: u32,
+        review: String,
+        freelancer: Address,
+    ) -> Result<(), Error> {
+        ratings::submit_client_rating(&env, escrow_id, rating, review, freelancer)
+    }
+
+    /// Get client rating for an escrow (set by freelancer)
+    pub fn get_client_rating(env: Env, escrow_id: u32) -> Option<ClientRatingData> {
+        ratings::get_client_rating(&env, escrow_id)
+    }
+
+    /// Get average rating for a client address → (total, count)
+    pub fn get_average_client_rating(env: Env, client: Address) -> (u32, u32) {
+        ratings::get_average_client_rating(&env, client)
+    }
+
     // (moved earlier) is_authorized_arbiter is defined above with other admin views
 }
 

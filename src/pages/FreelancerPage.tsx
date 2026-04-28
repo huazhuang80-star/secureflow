@@ -78,6 +78,7 @@ interface Escrow {
   status: string;
   createdAt: number;
   duration: number;
+  deadlineAt?: number;
   milestones: Milestone[];
   projectTitle?: string;
   projectDescription: string;

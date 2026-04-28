@@ -70,6 +70,8 @@ pub enum SecureFlowError {
     RatingAlreadySubmitted = 1801,
     InvalidRating = 1802,
     OnlyDepositorCanRate = 1803,
+    OnlyBeneficiaryCanRate = 1804,
+    ClientRatingAlreadySubmitted = 1805,
 }
 
 impl From<SecureFlowError> for Error {
@@ -139,6 +141,18 @@ pub struct Rating {
     pub rated_at: u32,
 }
 
+// Client rating struct (freelancer rates client)
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct ClientRatingData {
+    pub escrow_id: u32,
+    pub client: Address,
+    pub freelancer: Address,
+    pub rating: u32, // 1-5 stars
+    pub review: String,
+    pub rated_at: u32,
+}
+
 // Badge enum
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[contracttype]
@@ -196,9 +210,11 @@ pub enum DataKey {
     TotalFeesByToken(Address),      // token -> i128
     Reputation(Address),            // user -> u32
     CompletedEscrows(Address),      // user -> u32
-    Rating(u32),                    // escrow_id -> Rating
+    Rating(u32),                    // escrow_id -> Rating (client rates freelancer)
     FreelancerRating(Address),      // freelancer -> Vec<u32> (escrow_ids with ratings)
     AverageRating(Address),         // freelancer -> (total_rating, count)
+    ClientRating(u32),              // escrow_id -> ClientRatingData (freelancer rates client)
+    AverageClientRating(Address),   // client -> (total_rating, count)
     NextEscrowId,                   // -> u32
     PlatformFeeBP,                  // -> u32
     FeeCollector,                   // -> Address

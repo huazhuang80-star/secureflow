@@ -1,9 +1,12 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle, Star } from "lucide-react";
 import type { Escrow } from "@/lib/web3/types";
+import { ContractService } from "@/lib/web3/contract-service";
+import { CONTRACTS } from "@/lib/web3/config";
 
 interface JobCardProps {
   job: Escrow;
@@ -22,6 +25,15 @@ export function JobCard({
   ongoingProjectsCount,
   onApply,
 }: JobCardProps) {
+  const [clientRating, setClientRating] = useState<{ average: number; count: number } | null>(null);
+
+  useEffect(() => {
+    if (!job.payer) return;
+    const svc = new ContractService(CONTRACTS.SECUREFLOW_ESCROW);
+    svc.getAverageClientRating(job.payer)
+      .then((r) => { if (r.count > 0) setClientRating(r); })
+      .catch(() => {});
+  }, [job.payer]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -62,13 +74,23 @@ export function JobCard({
               {job.projectDescription || "No description available"}
             </p>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
               <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
               <span>•</span>
               <span>
                 Budget: {(Number.parseFloat(job.totalAmount) / 1e7).toFixed(2)}{" "}
                 tokens
               </span>
+              {clientRating && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1" title={`Client rated ${clientRating.average}/5 by ${clientRating.count} freelancer(s)`}>
+                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium text-foreground">{clientRating.average.toFixed(1)}</span>
+                    <span className="text-xs">({clientRating.count})</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
 

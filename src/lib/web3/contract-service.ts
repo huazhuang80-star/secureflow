@@ -1127,6 +1127,108 @@ export class ContractService {
     }
   }
 
+  /** Submit a rating for the client (called by freelancer after completion) */
+  async submitClientRating(params: {
+    escrow_id: number;
+    rating: number;
+    review: string;
+    freelancer: string;
+  }): Promise<string> {
+    return this.sendOwnerTransaction(
+      "submit_client_rating",
+      [
+        nativeToScVal(params.escrow_id, { type: "u32" }),
+        nativeToScVal(params.rating, { type: "u32" }),
+        nativeToScVal(params.review, { type: "string" }),
+        nativeToScVal(params.freelancer, { type: "address" }),
+      ],
+      params.freelancer
+    );
+  }
+
+  /** Get client rating for an escrow (set by freelancer) */
+  async getClientRating(escrowId: number): Promise<{
+    escrowId: number;
+    client: string;
+    freelancer: string;
+    rating: number;
+    review: string;
+    ratedAt: number;
+  } | null> {
+    try {
+      const contract = new Contract(this.contractId);
+      const sourceAddress =
+        useWalletStore.getState().address ||
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+      const sourceAccount = {
+        accountId: () => sourceAddress,
+        sequenceNumber: () => "0",
+        incrementSequenceNumber: () => {},
+      } as any;
+      const tx = new TransactionBuilder(sourceAccount, {
+        fee: "100",
+        networkPassphrase: this.network.networkPassphrase,
+      })
+        .addOperation(
+          contract.call("get_client_rating", nativeToScVal(escrowId, { type: "u32" }))
+        )
+        .setTimeout(30)
+        .build();
+      const simulation = await this.rpcServer.simulateTransaction(tx);
+      if ("errorResult" in simulation && simulation.errorResult) return null;
+      const retval = ("result" in simulation && (simulation.result as any)?.retval)
+        || ("returnValue" in simulation && simulation.returnValue);
+      if (!retval) return null;
+      const r = scValToNative(retval as xdr.ScVal) as any;
+      if (!r) return null;
+      return {
+        escrowId: r.escrow_id ?? escrowId,
+        client: r.client ?? "",
+        freelancer: r.freelancer ?? "",
+        rating: r.rating ?? 0,
+        review: r.review ?? "",
+        ratedAt: r.rated_at ?? 0,
+      };
+    } catch { return null; }
+  }
+
+  /** Get average client rating → { average, count } */
+  async getAverageClientRating(clientAddress: string): Promise<{ average: number; count: number }> {
+    try {
+      const contract = new Contract(this.contractId);
+      const sourceAddress =
+        useWalletStore.getState().address ||
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+      const sourceAccount = {
+        accountId: () => sourceAddress,
+        sequenceNumber: () => "0",
+        incrementSequenceNumber: () => {},
+      } as any;
+      const tx = new TransactionBuilder(sourceAccount, {
+        fee: "100",
+        networkPassphrase: this.network.networkPassphrase,
+      })
+        .addOperation(
+          contract.call(
+            "get_average_client_rating",
+            nativeToScVal(clientAddress, { type: "address" })
+          )
+        )
+        .setTimeout(30)
+        .build();
+      const simulation = await this.rpcServer.simulateTransaction(tx);
+      if ("errorResult" in simulation && simulation.errorResult) return { average: 0, count: 0 };
+      const retval = ("result" in simulation && (simulation.result as any)?.retval)
+        || ("returnValue" in simulation && simulation.returnValue);
+      if (!retval) return { average: 0, count: 0 };
+      const tuple = scValToNative(retval as xdr.ScVal) as any;
+      if (!tuple) return { average: 0, count: 0 };
+      const total = Number(Array.isArray(tuple) ? tuple[0] : tuple[0] ?? 0);
+      const count = Number(Array.isArray(tuple) ? tuple[1] : tuple[1] ?? 0);
+      return { average: count > 0 ? Math.round((total / count) * 10) / 10 : 0, count };
+    } catch { return { average: 0, count: 0 }; }
+  }
+
   /**
    * Get all applications for a job by reading from storage
    * Now includes badge and rating information
@@ -1497,8 +1599,48 @@ export class ContractService {
 
   async getReputation(userAddress: string): Promise<number> {
     try {
-      const result = await this.client.get_reputation({ user: userAddress });
-      return result.result as number;
+      const contract = new Contract(this.contractId);
+      const sourceAddress =
+        useWalletStore.getState().address ||
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+      const sourceAccount = {
+        accountId: () => sourceAddress,
+        sequenceNumber: () => "0",
+        incrementSequenceNumber: () => {},
+      } as any;
+
+      const tx = new TransactionBuilder(sourceAccount, {
+        fee: "100",
+        networkPassphrase: this.network.networkPassphrase,
+      })
+        .addOperation(
+          contract.call(
+            "get_reputation",
+            nativeToScVal(userAddress, { type: "address" })
+          )
+        )
+        .setTimeout(30)
+        .build();
+
+      const simulation = await this.rpcServer.simulateTransaction(tx);
+
+      if ("errorResult" in simulation && simulation.errorResult) {
+        return 0;
+      }
+
+      if ("result" in simulation && simulation.result) {
+        const retval = (simulation.result as any).retval;
+        if (retval) {
+          const value = scValToNative(retval as xdr.ScVal);
+          return Number(value) || 0;
+        }
+      }
+      // Also handle returnValue path
+      if ("returnValue" in simulation && simulation.returnValue) {
+        const value = scValToNative(simulation.returnValue as xdr.ScVal);
+        return Number(value) || 0;
+      }
+      return 0;
     } catch (error) {
       return 0;
     }
@@ -3724,7 +3866,7 @@ export class ContractService {
         const invokeOp = operations[0] as any;
         const hostFn = invokeOp.function || invokeOp.hostFunction;
         const newOp = Operation.invokeHostFunction({
-          function: hostFn as stellarXdr.HostFunction,
+          function: hostFn as any,
           auth: parsedSignedAuth,
         } as any);
 

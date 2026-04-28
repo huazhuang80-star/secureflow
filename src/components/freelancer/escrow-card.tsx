@@ -1,11 +1,15 @@
 
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { Clock, DollarSign, Calendar, Play, Send } from "lucide-react";
+import { Clock, DollarSign, Calendar, Play, Send, Star } from "lucide-react";
+import { ClientRatingDialog } from "@/components/rating/client-rating-dialog";
+import { ContractService } from "@/lib/web3/contract-service";
+import { CONTRACTS } from "@/lib/web3/config";
 
 interface Milestone {
   description: string;
@@ -45,6 +49,22 @@ export function EscrowCard({
   onSubmitMilestone,
   onDispute,
 }: EscrowCardProps) {
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [hasClientRating, setHasClientRating] = useState(false);
+
+  const isCompleted =
+    escrow.status === "completed" ||
+    escrow.status === "released" ||
+    escrow.status === "Released";
+
+  useEffect(() => {
+    if (!isCompleted || !escrow.payer) return;
+    const svc = new ContractService(CONTRACTS.SECUREFLOW_ESCROW);
+    svc.getClientRating(Number(escrow.id))
+      .then((r) => setHasClientRating(!!r))
+      .catch(() => {});
+  }, [escrow.id, isCompleted, escrow.payer]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -215,10 +235,38 @@ export function EscrowCard({
                   Open Dispute
                 </Button>
               )}
+              {isCompleted && !hasClientRating && escrow.payer && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setRatingDialogOpen(true)}
+                >
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  Rate Client
+                </Button>
+              )}
+              {isCompleted && hasClientRating && (
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  Client rated
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {ratingDialogOpen && escrow.payer && escrow.beneficiary && (
+        <ClientRatingDialog
+          open={ratingDialogOpen}
+          onOpenChange={setRatingDialogOpen}
+          escrowId={Number(escrow.id)}
+          clientAddress={escrow.payer}
+          freelancerAddress={escrow.beneficiary}
+          onSuccess={() => setHasClientRating(true)}
+        />
+      )}
     </motion.div>
   );
 }

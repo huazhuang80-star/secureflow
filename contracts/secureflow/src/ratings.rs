@@ -1,5 +1,5 @@
 use crate::storage_types::{
-    DataKey, EscrowStatus, Rating, Badge, SecureFlowError, INSTANCE_BUMP_AMOUNT, INSTANCE_LIFETIME_THRESHOLD,
+    DataKey, EscrowStatus, Rating, ClientRatingData, Badge, SecureFlowError, INSTANCE_BUMP_AMOUNT, INSTANCE_LIFETIME_THRESHOLD,
 };
 use crate::escrow_core;
 use soroban_sdk::{Address, Env, String, Error};
@@ -130,6 +130,80 @@ pub fn get_badge(env: &Env, freelancer: Address) -> Badge {
         15..=49 => Badge::Advanced,
         _ => Badge::Expert,
     }
+}
+
+/// Submit a rating for the client by the freelancer after escrow completion
+pub fn submit_client_rating(
+    env: &Env,
+    escrow_id: u32,
+    rating: u32,
+    review: String,
+    freelancer: Address,
+) -> Result<(), Error> {
+    freelancer.require_auth();
+
+    if rating < 1 || rating > 5 {
+        return Err(Error::from_contract_error(SecureFlowError::InvalidRating as u32));
+    }
+
+    escrow_core::require_valid_escrow(env, escrow_id)?;
+    let escrow = escrow_core::get_escrow(env, escrow_id)
+        .ok_or_else(|| Error::from_contract_error(SecureFlowError::EscrowNotFound as u32))?;
+
+    // Only the beneficiary (freelancer) can rate the client
+    let beneficiary = escrow.beneficiary
+        .ok_or_else(|| Error::from_contract_error(SecureFlowError::EscrowNotFound as u32))?;
+    if beneficiary != freelancer {
+        return Err(Error::from_contract_error(SecureFlowError::OnlyBeneficiaryCanRate as u32));
+    }
+
+    // Escrow must be completed
+    if escrow.status != EscrowStatus::Released {
+        return Err(Error::from_contract_error(SecureFlowError::EscrowNotCompleted as u32));
+    }
+
+    // Prevent duplicate rating
+    let rating_key = DataKey::ClientRating(escrow_id);
+    if env.storage().instance().has(&rating_key) {
+        return Err(Error::from_contract_error(SecureFlowError::ClientRatingAlreadySubmitted as u32));
+    }
+
+    let rating_data = ClientRatingData {
+        escrow_id,
+        client: escrow.depositor.clone(),
+        freelancer: freelancer.clone(),
+        rating,
+        review,
+        rated_at: env.ledger().sequence(),
+    };
+
+    env.storage().instance().extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+    env.storage().instance().set(&rating_key, &rating_data);
+
+    // Update client's average rating
+    update_average_client_rating(env, &escrow.depositor, rating);
+
+    Ok(())
+}
+
+/// Update rolling average client rating
+fn update_average_client_rating(env: &Env, client: &Address, new_rating: u32) {
+    env.storage().instance().extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+    let key = DataKey::AverageClientRating(client.clone());
+    let current: (u32, u32) = env.storage().instance().get(&key).unwrap_or((0, 0));
+    env.storage().instance().set(&key, &(current.0 + new_rating, current.1 + 1));
+}
+
+/// Get client rating for an escrow (set by freelancer)
+pub fn get_client_rating(env: &Env, escrow_id: u32) -> Option<ClientRatingData> {
+    env.storage().instance().extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+    env.storage().instance().get(&DataKey::ClientRating(escrow_id))
+}
+
+/// Get average rating for a client address
+pub fn get_average_client_rating(env: &Env, client: Address) -> (u32, u32) {
+    env.storage().instance().extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+    env.storage().instance().get(&DataKey::AverageClientRating(client)).unwrap_or((0, 0))
 }
 
 /// Get completed escrows count for a user

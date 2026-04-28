@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Buffer } from "buffer";
 import { Address } from "@stellar/stellar-sdk";
 import {
@@ -34,7 +35,7 @@ if (typeof window !== "undefined") {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CC5ZDNKNFJG66EWXZFVRGZALTEHKN6S2B6DQ6KINURH66ORQ3K7RGU4E",
+    contractId: "CB5PR2UPVMNTOU3H4MX4LZOD6YXWHO3ORP4QCMJFAWAPHCNROGYKTUVO",
   }
 } as const
 
@@ -65,6 +66,16 @@ export interface Application {
 
 
 export interface Rating {
+  client: string;
+  escrow_id: u32;
+  freelancer: string;
+  rated_at: u32;
+  rating: u32;
+  review: string;
+}
+
+
+export interface ClientRatingData {
   client: string;
   escrow_id: u32;
   freelancer: string;
@@ -105,7 +116,7 @@ export interface OverdueRequest {
   requester: string;
 }
 
-export type DataKey = {tag: "Escrow", values: readonly [u32]} | {tag: "Milestone", values: readonly [u32, u32]} | {tag: "Application", values: readonly [u32, u32]} | {tag: "UserEscrows", values: readonly [string]} | {tag: "AuthorizedArbiter", values: readonly [string]} | {tag: "AuthorizedArbiters", values: void} | {tag: "WhitelistedToken", values: readonly [string]} | {tag: "WhitelistedTokens", values: void} | {tag: "EscrowedAmount", values: readonly [string]} | {tag: "TotalFeesByToken", values: readonly [string]} | {tag: "Reputation", values: readonly [string]} | {tag: "CompletedEscrows", values: readonly [string]} | {tag: "Rating", values: readonly [u32]} | {tag: "FreelancerRating", values: readonly [string]} | {tag: "AverageRating", values: readonly [string]} | {tag: "NextEscrowId", values: void} | {tag: "PlatformFeeBP", values: void} | {tag: "FeeCollector", values: void} | {tag: "Owner", values: void} | {tag: "JobCreationPaused", values: void} | {tag: "OverdueRequest", values: readonly [u32]};
+export type DataKey = {tag: "Escrow", values: readonly [u32]} | {tag: "Milestone", values: readonly [u32, u32]} | {tag: "Application", values: readonly [u32, u32]} | {tag: "UserEscrows", values: readonly [string]} | {tag: "AuthorizedArbiter", values: readonly [string]} | {tag: "AuthorizedArbiters", values: void} | {tag: "WhitelistedToken", values: readonly [string]} | {tag: "WhitelistedTokens", values: void} | {tag: "EscrowedAmount", values: readonly [string]} | {tag: "TotalFeesByToken", values: readonly [string]} | {tag: "Reputation", values: readonly [string]} | {tag: "CompletedEscrows", values: readonly [string]} | {tag: "Rating", values: readonly [u32]} | {tag: "FreelancerRating", values: readonly [string]} | {tag: "AverageRating", values: readonly [string]} | {tag: "ClientRating", values: readonly [u32]} | {tag: "AverageClientRating", values: readonly [string]} | {tag: "NextEscrowId", values: void} | {tag: "PlatformFeeBP", values: void} | {tag: "FeeCollector", values: void} | {tag: "Owner", values: void} | {tag: "JobCreationPaused", values: void} | {tag: "OverdueRequest", values: readonly [u32]};
 
 export interface Client {
   /**
@@ -383,6 +394,24 @@ export interface Client {
    */
   get_completed_escrows: ({user}: {user: string}, options?: MethodOptions) => Promise<AssembledTransaction<u32>>
 
+  /**
+   * Construct and simulate a submit_client_rating transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Submit a rating for the client (called by freelancer after completion)
+   */
+  submit_client_rating: ({escrow_id, rating, review, freelancer}: {escrow_id: u32, rating: u32, review: string, freelancer: string}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
+
+  /**
+   * Construct and simulate a get_client_rating transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Get client rating for an escrow (set by freelancer)
+   */
+  get_client_rating: ({escrow_id}: {escrow_id: u32}, options?: MethodOptions) => Promise<AssembledTransaction<Option<ClientRatingData>>>
+
+  /**
+   * Construct and simulate a get_average_client_rating transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Get average rating for a client address → (total, count)
+   */
+  get_average_client_rating: ({client}: {client: string}, options?: MethodOptions) => Promise<AssembledTransaction<readonly [u32, u32]>>
+
 }
 export class Client extends ContractClient {
   static async deploy<T = Client>(
@@ -406,10 +435,11 @@ export class Client extends ContractClient {
         "AAAAAQAAAAAAAAAAAAAACU1pbGVzdG9uZQAAAAAAAAkAAAAAAAAABmFtb3VudAAAAAAACwAAAAAAAAALYXBwcm92ZWRfYXQAAAAABAAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAAOZGlzcHV0ZV9yZWFzb24AAAAAA+gAAAAQAAAAAAAAAAtkaXNwdXRlZF9hdAAAAAAEAAAAAAAAAAtkaXNwdXRlZF9ieQAAAAPoAAAAEwAAAAAAAAAQcmVqZWN0aW9uX3JlYXNvbgAAA+gAAAAQAAAAAAAAAAZzdGF0dXMAAAAAB9AAAAAPTWlsZXN0b25lU3RhdHVzAAAAAAAAAAAMc3VibWl0dGVkX2F0AAAABA==",
         "AAAAAQAAAAAAAAAAAAAAC0FwcGxpY2F0aW9uAAAAAAQAAAAAAAAACmFwcGxpZWRfYXQAAAAAAAQAAAAAAAAADGNvdmVyX2xldHRlcgAAABAAAAAAAAAACmZyZWVsYW5jZXIAAAAAABMAAAAAAAAAEXByb3Bvc2VkX3RpbWVsaW5lAAAAAAAABA==",
         "AAAAAQAAAAAAAAAAAAAABlJhdGluZwAAAAAABgAAAAAAAAAGY2xpZW50AAAAAAATAAAAAAAAAAllc2Nyb3dfaWQAAAAAAAAEAAAAAAAAAApmcmVlbGFuY2VyAAAAAAATAAAAAAAAAAhyYXRlZF9hdAAAAAQAAAAAAAAABnJhdGluZwAAAAAABAAAAAAAAAAGcmV2aWV3AAAAAAAQ",
+        "AAAAAQAAAAAAAAAAAAAAEENsaWVudFJhdGluZ0RhdGEAAAAGAAAAAAAAAAZjbGllbnQAAAAAABMAAAAAAAAACWVzY3Jvd19pZAAAAAAAAAQAAAAAAAAACmZyZWVsYW5jZXIAAAAAABMAAAAAAAAACHJhdGVkX2F0AAAABAAAAAAAAAAGcmF0aW5nAAAAAAAEAAAAAAAAAAZyZXZpZXcAAAAAABA=",
         "AAAAAgAAAAAAAAAAAAAABUJhZGdlAAAAAAAABAAAAAAAAAAAAAAACEJlZ2lubmVyAAAAAAAAAAAAAAAMSW50ZXJtZWRpYXRlAAAAAAAAAAAAAAAIQWR2YW5jZWQAAAAAAAAAAAAAAAZFeHBlcnQAAA==",
         "AAAAAQAAAAAAAAAAAAAACkVzY3Jvd0RhdGEAAAAAABAAAAAAAAAACGFyYml0ZXJzAAAD6gAAABMAAAAAAAAAC2JlbmVmaWNpYXJ5AAAAA+gAAAATAAAAAAAAAApjcmVhdGVkX2F0AAAAAAAEAAAAAAAAAAhkZWFkbGluZQAAAAQAAAAAAAAACWRlcG9zaXRvcgAAAAAAABMAAAAAAAAAC2lzX29wZW5fam9iAAAAAAEAAAAAAAAAD21pbGVzdG9uZV9jb3VudAAAAAAEAAAAAAAAAAtwYWlkX2Ftb3VudAAAAAALAAAAAAAAAAxwbGF0Zm9ybV9mZWUAAAALAAAAAAAAABNwcm9qZWN0X2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAADXByb2plY3RfdGl0bGUAAAAAAAAQAAAAAAAAABZyZXF1aXJlZF9jb25maXJtYXRpb25zAAAAAAAEAAAAAAAAAAZzdGF0dXMAAAAAB9AAAAAMRXNjcm93U3RhdHVzAAAAAAAAAAV0b2tlbgAAAAAAA+gAAAATAAAAAAAAAAx0b3RhbF9hbW91bnQAAAALAAAAAAAAAAx3b3JrX3N0YXJ0ZWQAAAAB",
         "AAAAAQAAAFBTdG9yZWQgd2hlbiBlaXRoZXIgcGFydHkgcmFpc2VzIGFuIG92ZXJkdWUgZGlzcHV0ZSwgYXdhaXRpbmcgYXJiaXRlciByZXNvbHV0aW9uLgAAAAAAAAAOT3ZlcmR1ZVJlcXVlc3QAAAAAAAMAAAAAAAAABnJlYXNvbgAAAAAAEAAAAAAAAAAMcmVxdWVzdGVkX2F0AAAABAAAAAAAAAAJcmVxdWVzdGVyAAAAAAAAEw==",
-        "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAAFQAAAAEAAAAAAAAABkVzY3JvdwAAAAAAAQAAAAQAAAABAAAAAAAAAAlNaWxlc3RvbmUAAAAAAAACAAAABAAAAAQAAAABAAAAAAAAAAtBcHBsaWNhdGlvbgAAAAACAAAABAAAAAQAAAABAAAAAAAAAAtVc2VyRXNjcm93cwAAAAABAAAAEwAAAAEAAAAAAAAAEUF1dGhvcml6ZWRBcmJpdGVyAAAAAAAAAQAAABMAAAAAAAAAAAAAABJBdXRob3JpemVkQXJiaXRlcnMAAAAAAAEAAAAAAAAAEFdoaXRlbGlzdGVkVG9rZW4AAAABAAAAEwAAAAAAAAAAAAAAEVdoaXRlbGlzdGVkVG9rZW5zAAAAAAAAAQAAAAAAAAAORXNjcm93ZWRBbW91bnQAAAAAAAEAAAATAAAAAQAAAAAAAAAQVG90YWxGZWVzQnlUb2tlbgAAAAEAAAATAAAAAQAAAAAAAAAKUmVwdXRhdGlvbgAAAAAAAQAAABMAAAABAAAAAAAAABBDb21wbGV0ZWRFc2Nyb3dzAAAAAQAAABMAAAABAAAAAAAAAAZSYXRpbmcAAAAAAAEAAAAEAAAAAQAAAAAAAAAQRnJlZWxhbmNlclJhdGluZwAAAAEAAAATAAAAAQAAAAAAAAANQXZlcmFnZVJhdGluZwAAAAAAAAEAAAATAAAAAAAAAAAAAAAMTmV4dEVzY3Jvd0lkAAAAAAAAAAAAAAANUGxhdGZvcm1GZWVCUAAAAAAAAAAAAAAAAAAADEZlZUNvbGxlY3RvcgAAAAAAAAAAAAAABU93bmVyAAAAAAAAAAAAAAAAAAARSm9iQ3JlYXRpb25QYXVzZWQAAAAAAAABAAAAAAAAAA5PdmVyZHVlUmVxdWVzdAAAAAAAAQAAAAQ=",
+        "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",
@@ -457,7 +487,10 @@ export class Client extends ContractClient {
         "AAAAAAAAABhHZXQgcmF0aW5nIGZvciBhbiBlc2Nyb3cAAAAKZ2V0X3JhdGluZwAAAAAAAQAAAAAAAAAJZXNjcm93X2lkAAAAAAAABAAAAAEAAAPoAAAH0AAAAAZSYXRpbmcAAA==",
         "AAAAAAAAAENHZXQgYXZlcmFnZSByYXRpbmcgZm9yIGEgZnJlZWxhbmNlciAocmV0dXJucyAodG90YWxfcmF0aW5nLCBjb3VudCkpAAAAABJnZXRfYXZlcmFnZV9yYXRpbmcAAAAAAAEAAAAAAAAACmZyZWVsYW5jZXIAAAAAABMAAAABAAAD7QAAAAIAAAAEAAAABA==",
         "AAAAAAAAABpHZXQgYmFkZ2UgZm9yIGEgZnJlZWxhbmNlcgAAAAAACWdldF9iYWRnZQAAAAAAAAEAAAAAAAAACmZyZWVsYW5jZXIAAAAAABMAAAABAAAH0AAAAAVCYWRnZQAAAA==",
-        "AAAAAAAAACZHZXQgY29tcGxldGVkIGVzY3Jvd3MgY291bnQgZm9yIGEgdXNlcgAAAAAAFWdldF9jb21wbGV0ZWRfZXNjcm93cwAAAAAAAAEAAAAAAAAABHVzZXIAAAATAAAAAQAAAAQ=" ]),
+        "AAAAAAAAACZHZXQgY29tcGxldGVkIGVzY3Jvd3MgY291bnQgZm9yIGEgdXNlcgAAAAAAFWdldF9jb21wbGV0ZWRfZXNjcm93cwAAAAAAAAEAAAAAAAAABHVzZXIAAAATAAAAAQAAAAQ=",
+        "AAAAAAAAAEZTdWJtaXQgYSByYXRpbmcgZm9yIHRoZSBjbGllbnQgKGNhbGxlZCBieSBmcmVlbGFuY2VyIGFmdGVyIGNvbXBsZXRpb24pAAAAAAAUc3VibWl0X2NsaWVudF9yYXRpbmcAAAAEAAAAAAAAAAllc2Nyb3dfaWQAAAAAAAAEAAAAAAAAAAZyYXRpbmcAAAAAAAQAAAAAAAAABnJldmlldwAAAAAAEAAAAAAAAAAKZnJlZWxhbmNlcgAAAAAAEwAAAAEAAAPpAAAD7QAAAAAAAAAD",
+        "AAAAAAAAADNHZXQgY2xpZW50IHJhdGluZyBmb3IgYW4gZXNjcm93IChzZXQgYnkgZnJlZWxhbmNlcikAAAAAEWdldF9jbGllbnRfcmF0aW5nAAAAAAAAAQAAAAAAAAAJZXNjcm93X2lkAAAAAAAABAAAAAEAAAPoAAAH0AAAABBDbGllbnRSYXRpbmdEYXRh",
+        "AAAAAAAAADpHZXQgYXZlcmFnZSByYXRpbmcgZm9yIGEgY2xpZW50IGFkZHJlc3Mg4oaSICh0b3RhbCwgY291bnQpAAAAAAAZZ2V0X2F2ZXJhZ2VfY2xpZW50X3JhdGluZwAAAAAAAAEAAAAAAAAABmNsaWVudAAAAAAAEwAAAAEAAAPtAAAAAgAAAAQAAAAE" ]),
       options
     )
   }
@@ -509,6 +542,9 @@ export class Client extends ContractClient {
         get_rating: this.txFromJSON<Option<Rating>>,
         get_average_rating: this.txFromJSON<readonly [u32, u32]>,
         get_badge: this.txFromJSON<Badge>,
-        get_completed_escrows: this.txFromJSON<u32>
+        get_completed_escrows: this.txFromJSON<u32>,
+        submit_client_rating: this.txFromJSON<Result<void>>,
+        get_client_rating: this.txFromJSON<Option<ClientRatingData>>,
+        get_average_client_rating: this.txFromJSON<readonly [u32, u32]>
   }
 }

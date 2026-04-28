@@ -58,17 +58,18 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   // methods that call useWalletStore.getState().address always get a valid address.
   useEffect(() => {
     const { connectWalletStore, disconnectWalletStore } = useWalletStore.getState();
+    const networkName = (import.meta.env.VITE_STELLAR_NETWORK || "testnet") as "testnet" | "mainnet" | "local";
     if (walletState.address && walletState.isConnected) {
       connectWalletStore(
         walletState.address,
-        (network.name as "testnet" | "mainnet" | "local") ?? "testnet",
+        networkName,
         "",
         walletState.address,
       );
     } else {
       disconnectWalletStore();
     }
-  }, [walletState.address, walletState.isConnected, network.name]);
+  }, [walletState.address, walletState.isConnected]);
 
   // Lazy initialization of RPC server to avoid undefined errors
   const getRpcServer = useMemo(() => {
