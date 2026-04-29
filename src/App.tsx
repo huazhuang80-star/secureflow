@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from "react-router-dom";
 import { Navbar } from "./components/navbar";
 import { Toaster } from "./components/ui/toaster";
 import { NewMessageWatcher } from "./components/new-message-watcher";
+import { EscrowPoller } from "./components/escrow-poller";
 import HomePage from "./pages/HomePage";
 import JobsPage from "./pages/JobsPage";
 import CreatePage from "./pages/CreatePage";
@@ -21,6 +22,7 @@ const AppLayout = () => (
       <Outlet />
     </div>
     <NewMessageWatcher />
+    <EscrowPoller />
     <Toaster />
   </>
 );

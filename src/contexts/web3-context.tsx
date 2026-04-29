@@ -669,17 +669,15 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
             // Handle auth entries if needed
             if (authEntries.length > 0) {
-              const { signAuthEntry } = await import("@stellar/freighter-api");
-
               const signedAuthEntries = await Promise.all(
                 authEntries.map(async (entry: any) => {
                   const entryXdr = entry.toXDR("base64");
-                  const signed = await signAuthEntry(entryXdr, {
+                  const signed = await wallet.signAuthEntry(entryXdr, {
                     networkPassphrase: network.networkPassphrase,
                     address: freelancerAddress,
                   });
                   return (
-                    signed.signedAuthEntry ||
+                    (signed as any).signedAuthEntry ||
                     (signed as any).signedAuthEntryXdr ||
                     entryXdr
                   );
@@ -801,12 +799,6 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
             // Check if simulation returned auth entries that need to be signed
             if (authEntries && authEntries.length > 0) {
-
-              // Sign auth entries first, then the transaction
-              const { signAuthEntry } = await import("@stellar/freighter-api");
-
-              // Sign each auth entry individually
-
               if (!walletState.address) {
                 throw new Error(
                   "Wallet address is required to sign auth entries"
@@ -816,12 +808,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
               const signedAuthEntries = await Promise.all(
                 authEntries.map(async (entry: any) => {
                   const entryXdr = entry.toXDR("base64");
-                  const signed = await signAuthEntry(entryXdr, {
+                  const signed = await wallet.signAuthEntry(entryXdr, {
                     networkPassphrase: network.networkPassphrase,
                     address: walletState.address!,
                   });
                   return (
-                    signed.signedAuthEntry ||
+                    (signed as any).signedAuthEntry ||
                     (signed as any).signedAuthEntryXdr ||
                     entryXdr
                   );
@@ -887,11 +879,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                   // Prepare the new transaction (to get resource fees)
                   const newPrepared = await server.prepareTransaction(newTx);
 
-                  // Sign the rebuilt transaction directly with signed auth entries
-                  const { signTransaction: signTxFromFreighter } = await import(
-                    "@stellar/freighter-api"
-                  );
-                  const signResult = await signTxFromFreighter(
+                  // Sign the rebuilt transaction with the currently active wallet
+                  const signResult = await wallet.signTransaction(
                     newPrepared.toXDR(),
                     {
                       networkPassphrase: network.networkPassphrase,

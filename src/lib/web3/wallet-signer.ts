@@ -1,13 +1,12 @@
 /**
  * Centralized wallet signing utility
- * Handles transaction signing with Stellar wallets
+ * Handles transaction signing with any wallet supported by StellarWalletsKit.
  */
 
 import { TransactionBuilder } from "@stellar/stellar-sdk";
 import { wallet } from "@/util/wallet";
 import { getCurrentNetwork } from "./stellar-config";
 import storage from "@/util/storage";
-// import { kit } from "./wallet-kit"; // Unused
 
 interface SignTransactionProps {
   unsignedTransaction: string | TransactionBuilder;
@@ -55,7 +54,9 @@ export const signTransaction = async ({
 };
 
 /**
- * Sign auth entries for contract invocations
+ * Sign auth entries for contract invocations.
+ * Uses StellarWalletsKit so any connected wallet (Freighter, XBULL, Lobstr, etc.)
+ * is supported — no Freighter-specific API is imported directly.
  */
 export const signAuthEntries = async (
   authEntries: any[],
@@ -63,36 +64,27 @@ export const signAuthEntries = async (
 ): Promise<string[]> => {
   const network = getCurrentNetwork();
 
-  // Try to use Freighter API for auth entries if available
-  try {
-    const { signAuthEntry } = await import("@stellar/freighter-api");
+  const walletId = storage.getItem("walletId");
+  if (!walletId) throw new Error("Wallet not connected");
+  wallet.setWallet(walletId);
 
-    const signedAuthEntries = await Promise.all(
-      authEntries.map(async (entry: any) => {
-        const entryXdr = entry.toXDR("base64");
-        const signed = await signAuthEntry(entryXdr, {
-          networkPassphrase: network.networkPassphrase,
-          address,
-        });
+  const signedAuthEntries = await Promise.all(
+    authEntries.map(async (entry: any) => {
+      const entryXdr = entry.toXDR("base64");
 
-        // Ensure we have a signed auth entry
-        const signedEntry =
-          signed.signedAuthEntry || (signed as any).signedAuthEntryXdr;
-        if (!signedEntry || signedEntry === entryXdr) {
-          throw new Error(
-            "Auth entry signing failed - no signed entry returned"
-          );
-        }
+      const signed = await wallet.signAuthEntry(entryXdr, {
+        networkPassphrase: network.networkPassphrase,
+        address,
+      });
 
-        return signedEntry;
-      })
-    );
+      const signedEntry =
+        (signed as any).signedAuthEntry ?? (signed as any).signedAuthEntryXdr;
+      if (!signedEntry) {
+        throw new Error("Auth entry signing failed — no signed entry returned");
+      }
+      return signedEntry;
+    })
+  );
 
-    return signedAuthEntries;
-  } catch (error) {
-    // Don't fallback - throw error if signing fails
-    throw new Error(
-      `Failed to sign auth entries: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
+  return signedAuthEntries;
 };
