@@ -44,6 +44,8 @@ export function NotificationCenter() {
         return "📝";
       case "message":
         return "💬";
+      case "rating":
+        return "⭐";
       default:
         return "🔔";
     }
@@ -61,6 +63,8 @@ export function NotificationCenter() {
         return "text-purple-600";
       case "message":
         return "text-indigo-600";
+      case "rating":
+        return "text-amber-600";
       default:
         return "text-gray-600";
     }

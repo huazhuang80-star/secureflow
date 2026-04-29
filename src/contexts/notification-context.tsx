@@ -46,7 +46,13 @@ function mergeRemoteNotifications(
 
 export interface Notification {
   id: string;
-  type: "milestone" | "dispute" | "escrow" | "application" | "message";
+  type:
+    | "milestone"
+    | "dispute"
+    | "escrow"
+    | "application"
+    | "message"
+    | "rating";
   title: string;
   message: string;
   timestamp: Date;
@@ -568,6 +574,29 @@ export const createApplicationNotification = (
         message: `Application status updated for ${additionalData?.jobTitle || `Job #${jobId}`}`,
         actionUrl: `/approvals?job=${jobId}`,
         data: baseData,
+      };
+  }
+};
+
+export const createRatingNotification = (
+  action: "received",
+  escrowId: number,
+  additionalData?: Record<string, any>,
+): Omit<Notification, "id" | "timestamp" | "read"> => {
+  switch (action) {
+    case "received":
+    default:
+      return {
+        type: "rating",
+        title: "New Rating Received",
+        message: `You received a ${additionalData?.rating ?? "new"} star rating${
+          additionalData?.review ? " with a review" : ""
+        }.`,
+        actionUrl: `/dashboard?escrow=${escrowId}`,
+        data: {
+          escrowId,
+          ...additionalData,
+        },
       };
   }
 };

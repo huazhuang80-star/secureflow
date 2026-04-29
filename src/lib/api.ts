@@ -109,7 +109,13 @@ export async function submitGaslessTransaction(body: {
 
 export type RemoteNotificationRow = {
   id: string;
-  type: "milestone" | "dispute" | "escrow" | "application" | "message";
+  type:
+    | "milestone"
+    | "dispute"
+    | "escrow"
+    | "application"
+    | "message"
+    | "rating";
   title: string;
   message: string;
   read: boolean;
@@ -141,7 +147,13 @@ export async function patchNotificationRead(
 
 export async function postNotification(body: {
   wallet_address: string;
-  type: "milestone" | "dispute" | "escrow" | "application" | "message";
+  type:
+    | "milestone"
+    | "dispute"
+    | "escrow"
+    | "application"
+    | "message"
+    | "rating";
   title: string;
   message: string;
   action_url?: string;

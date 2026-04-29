@@ -13,6 +13,11 @@ import { Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ContractService } from "@/lib/web3/contract-service";
 import { CONTRACTS } from "@/lib/web3/config";
+import { useWeb3 } from "@/contexts/web3-context";
+import {
+  createRatingNotification,
+  useNotifications,
+} from "@/contexts/notification-context";
 
 interface ClientRatingDialogProps {
   open: boolean;
@@ -26,11 +31,14 @@ interface ClientRatingDialogProps {
 export function ClientRatingDialog({
   open,
   onOpenChange,
+  clientAddress,
   escrowId,
   freelancerAddress,
   onSuccess,
 }: ClientRatingDialogProps) {
   const { toast } = useToast();
+  const { wallet } = useWeb3();
+  const { addNotification } = useNotifications();
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [review, setReview] = useState("");
@@ -50,6 +58,18 @@ export function ClientRatingDialog({
         review: review.trim(),
         freelancer: freelancerAddress,
       });
+
+      if (clientAddress && wallet.address) {
+        addNotification(
+          createRatingNotification("received", escrowId, {
+            rating,
+            review: review.trim(),
+            raterAddress: wallet.address,
+          }),
+          [clientAddress],
+        );
+      }
+
       toast({ title: "Rating submitted!", description: "Thank you for rating this client." });
       onOpenChange(false);
       onSuccess?.();
