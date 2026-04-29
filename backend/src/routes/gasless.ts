@@ -7,7 +7,7 @@
  * that the admin account pays all network fees.
  *
  * Required env vars:
- *   ADMIN_SECRET_KEY          – secret key of GBL5ZXODI2UVOTTLNJGCJ2N52MO…
+ *   ADMIN_SECRET_KEY          – secret key of the fee-sponsor account
  *   STELLAR_RPC_URL           – Soroban RPC endpoint (default: testnet)
  *   STELLAR_NETWORK_PASSPHRASE – network passphrase (default: testnet)
  */
@@ -17,6 +17,7 @@ import {
   Keypair,
   TransactionBuilder,
   Networks,
+  Transaction,
 } from "@stellar/stellar-sdk";
 import { Server as RpcServer } from "@stellar/stellar-sdk/rpc";
 
@@ -25,24 +26,48 @@ export const gaslessRouter = Router();
 const DEFAULT_RPC_URL = "https://soroban-testnet.stellar.org";
 const DEFAULT_PASSPHRASE = Networks.TESTNET;
 
+/**
+ * Wallets / JSON sometimes deliver XDR with whitespace, PEM-style line breaks,
+ * or URL-safe base64. Stellar RPC expects canonical base64.
+ */
+function normalizeSignedTxXdr(raw: string): string {
+  let s = String(raw).trim();
+  s = s.replace(/\s/g, "");
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = s.length % 4;
+  if (pad) s += "=".repeat(4 - pad);
+  return s;
+}
+
 function getAdminKeypair(): Keypair {
-  const secret = process.env.ADMIN_SECRET_KEY;
+  const secret = process.env.ADMIN_SECRET_KEY?.trim();
   if (!secret) {
     throw new Error(
-      "ADMIN_SECRET_KEY is not configured — set it in backend/.env"
+      "ADMIN_SECRET_KEY is not configured — set it in backend/.env",
     );
   }
   return Keypair.fromSecret(secret);
 }
 
 function getRpcServer(): RpcServer {
-  return new RpcServer(
-    process.env.STELLAR_RPC_URL ?? DEFAULT_RPC_URL
-  );
+  return new RpcServer(process.env.STELLAR_RPC_URL ?? DEFAULT_RPC_URL);
 }
 
 function getNetworkPassphrase(): string {
-  return process.env.STELLAR_NETWORK_PASSPHRASE ?? DEFAULT_PASSPHRASE;
+  return (process.env.STELLAR_NETWORK_PASSPHRASE ?? DEFAULT_PASSPHRASE).trim();
+}
+
+/** buildFeeBumpTransaction requires a plain Transaction, not a FeeBumpTransaction. */
+function requireInnerTransaction(
+  parsed: ReturnType<typeof TransactionBuilder.fromXDR>,
+): Transaction {
+  const maybeBump = parsed as Transaction & {
+    innerTransaction?: Transaction;
+  };
+  if (maybeBump.innerTransaction) {
+    return maybeBump.innerTransaction;
+  }
+  return parsed as Transaction;
 }
 
 gaslessRouter.post("/apply", async (req, res) => {
@@ -54,34 +79,36 @@ gaslessRouter.post("/apply", async (req, res) => {
       return;
     }
 
+    const normalizedXdr = normalizeSignedTxXdr(signedTxXdr);
+    if (normalizedXdr.length < 48) {
+      res.status(400).json({ error: "signedTxXdr is too short to be valid XDR" });
+      return;
+    }
+
     const adminKeypair = getAdminKeypair();
     const networkPassphrase = getNetworkPassphrase();
     const rpcServer = getRpcServer();
 
-    // Parse the user-signed inner transaction
-    const innerTx = TransactionBuilder.fromXDR(
-      signedTxXdr,
-      networkPassphrase
-    ) as any;
+    const parsed = TransactionBuilder.fromXDR(
+      normalizedXdr,
+      networkPassphrase,
+    );
+    const innerTx = requireInnerTransaction(parsed);
 
-    // The fee bump total fee must be >= the inner tx fee.
-    // We set it to max(inner_fee * 2, 1_000_000 stroops = 0.1 XLM) to be safe
-    // with Soroban resource fees embedded in the inner fee.
-    const innerFee = parseInt(innerTx.fee ?? "100", 10);
-    const bumpBaseFee = Math.max(innerFee, 500_000).toString();
+    const innerFeeRaw = innerTx.fee ?? "100";
+    const innerFee = Number.parseInt(String(innerFeeRaw), 10);
+    const innerFeeSafe = Number.isFinite(innerFee) ? innerFee : 100;
+    const bumpBaseFee = Math.max(innerFeeSafe, 500_000).toString();
 
-    // Build fee-bump transaction: admin is the fee source, user's tx is inner
     const feeBumpTx = TransactionBuilder.buildFeeBumpTransaction(
       adminKeypair.publicKey(),
       bumpBaseFee,
       innerTx,
-      networkPassphrase
+      networkPassphrase,
     );
 
-    // Admin signs the fee-bump envelope
     feeBumpTx.sign(adminKeypair);
 
-    // Submit to Soroban RPC
     const sendResponse = await rpcServer.sendTransaction(feeBumpTx as any);
 
     if (sendResponse.status === "ERROR") {
@@ -92,7 +119,6 @@ gaslessRouter.post("/apply", async (req, res) => {
     }
 
     if (sendResponse.status === "PENDING" && sendResponse.hash) {
-      // Poll for confirmation (up to 30 seconds)
       let attempts = 0;
       let txStatus: any = sendResponse;
 
@@ -108,7 +134,10 @@ gaslessRouter.post("/apply", async (req, res) => {
           if (result.status === "FAILED") {
             res
               .status(500)
-              .json({ error: "Transaction failed on-chain", txHash: sendResponse.hash });
+              .json({
+                error: "Transaction failed on-chain",
+                txHash: sendResponse.hash,
+              });
             return;
           }
         } catch {
@@ -117,7 +146,6 @@ gaslessRouter.post("/apply", async (req, res) => {
         attempts++;
       }
 
-      // Timed out — return hash anyway so frontend can check
       res.json({ txHash: sendResponse.hash, pending: true });
       return;
     }
@@ -126,6 +154,7 @@ gaslessRouter.post("/apply", async (req, res) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Gasless transaction failed";
     console.error("[gasless]", msg);
+    if (err instanceof Error && err.stack) console.error(err.stack);
     res.status(500).json({ error: msg });
   }
 });

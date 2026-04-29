@@ -9,7 +9,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "^15.0.1",
+    "@stellar/stellar-sdk": "14.2.0",
     "@supabase/supabase-js": "^2.49.1",
     "@types/multer": "^2.1.0",
     "cors": "^2.8.5",
