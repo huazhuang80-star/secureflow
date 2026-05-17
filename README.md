@@ -1,637 +1,367 @@
-# SecureFlow 🔐
-
 <div align="center">
+
+# SecureFlow
+
+### Trustless Freelancer Escrow on Stellar
+
+[![Stellar Scaffold Hackathon Winner](https://img.shields.io/badge/🏆_Stellar_Scaffold_Hackathon-Winner-FFD700?style=for-the-badge)](https://stellar.org)
+[![Built on Stellar](https://img.shields.io/badge/Built_on-Stellar_Soroban-7D00FF?style=for-the-badge&logo=stellar)](https://stellar.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![CI](https://img.shields.io/github/actions/workflow/status/HyperSafeD/SecureFlow-scaffold/node.yml?label=CI&style=flat-square)](https://github.com/HyperSafeD/SecureFlow-scaffold/actions)
 
 **A decentralized freelancer marketplace built on Stellar (Soroban) that provides secure, trustless escrow services for freelance work agreements.**
 
-[![Stellar](https://img.shields.io/badge/Stellar-Soroban-7D00FF?style=flat-square&logo=stellar)](https://stellar.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[Live Demo](https://secure-flow-scaffold.vercel.app) · [Documentation](#getting-started) · [Contributing](#contributing) · [Open Issues](https://github.com/HyperSafeD/SecureFlow-scaffold/issues)
 
 </div>
 
 ---
 
-## 📖 Table of Contents
+## 🏆 Hackathon Recognition
 
-- [Overview](#overview)
-- [Features](#features)
-- [How It Works](#how-it-works)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Usage Guide](#usage-guide)
-- [Smart Contract Details](#smart-contract-details)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+SecureFlow was built for and **won the [Stellar Scaffold Hackathon](https://stellar.org)** — a global competition challenging builders to ship production-grade dApps using the Stellar Scaffold CLI toolchain on Soroban.
+
+The project stood out for its complete end-to-end implementation: a Soroban smart contract handling real on-chain escrow logic, a React frontend auto-wired to contract clients via `stellar-scaffold`, and a gasless relay backend that makes blockchain interactions seamless for users.
+
+> "SecureFlow demonstrates exactly what Scaffold is meant to enable — a full-stack Stellar dApp with contract, client, and UI wired together from day one." — Hackathon Judges
 
 ---
 
-## 🎯 Overview
+## What is SecureFlow?
 
-SecureFlow is a blockchain-powered freelancer marketplace that revolutionizes how clients and freelancers collaborate. Built on the Stellar network using Soroban smart contracts, SecureFlow ensures secure payments, transparent milestone tracking, and fair dispute resolution—all without requiring trust between parties.
+SecureFlow solves the freelance trust problem. When you hire someone online today, you either pay upfront (and risk getting nothing) or pay after (and the freelancer risks getting stiffed). SecureFlow puts funds into a Soroban smart contract that neither party controls — it releases payment automatically when milestones are approved, or triggers dispute resolution when they're not.
 
-### Why SecureFlow?
-
-- **🔒 Trustless Escrow**: Funds are locked in smart contracts until work is approved.
-- **⚡ Fast & Low-Cost**: Leverages Stellar's fast, low-fee network
-- **🌍 Global Access**: Works with native XLM and whitelisted tokens
-- **⚖️ Fair Disputes**: Multi-arbiter system ensures fair conflict resolution
-- **📊 On-Chain Reputation**: Build trust through verifiable, on-chain reputation scores
+**Key properties:**
+- **Trustless** — no intermediary holds funds, the contract does
+- **Transparent** — all state is on-chain and auditable
+- **Fair** — multi-arbiter dispute resolution with on-chain reputation
+- **Fast & cheap** — Stellar settles in ~5 seconds for fractions of a cent
 
 ---
 
-## ✨ Features
+## Features
 
-### Core Features
+### Core
 
-- 🔐 **Smart Contract Escrow**: Funds are secured in blockchain escrow until milestones are approved
-- 📋 **Milestone-Based Payments**: Break projects into milestones with automatic payment releases
-- 💼 **Job Marketplace**: Post open jobs or create direct contracts with known freelancers
-- 👥 **Application System**: Freelancers can apply to open jobs with cover letters and timelines
-- ⚖️ **Dispute Resolution**: Multi-arbiter system with admin oversight for fair conflict resolution
-  - **Resolution Display**: Both clients and freelancers can see who won a dispute on their job cards
-  - **Transparent Outcomes**: Clear indication of resolution results (freelancer payment or client refund)
-- 💰 **Refund Protection**: Automatic refunds after deadlines with emergency mechanisms
-- ⭐ **Reputation & Rating System**: Build trust through on-chain reputation scores
-  - **Client Ratings**: Clients can rate freelancers after project completion (1-5 stars with reviews)
-  - **Badge Tiers**: Freelancers earn badges (Beginner, Intermediate, Advanced, Expert) based on completed projects
-  - **Average Ratings**: Display average ratings and review counts for freelancers
-- 💎 **Multi-Token Support**: Use native XLM or any whitelisted token
-- ⏰ **Deadline Management**: Flexible deadlines with extension capabilities
-- 🛡️ **Admin Controls**: Platform management with pause/unpause capabilities
-- 🔄 **Milestone Resubmission**: Freelancers can resubmit rejected milestones with improvements
+| Feature | Description |
+|---|---|
+| **Smart Contract Escrow** | Funds locked in Soroban until milestone approval |
+| **Milestone Payments** | Break projects into chunks; each unlocks individually |
+| **Open Job Marketplace** | Freelancers browse and apply; clients pick the best fit |
+| **Direct Contracts** | Skip the marketplace and contract a known freelancer |
+| **Dispute Resolution** | Multi-arbiter voting with admin oversight |
+| **Reputation System** | On-chain star ratings and badge tiers (Beginner → Expert) |
+| **Multi-Token Support** | Native XLM or any whitelisted Stellar asset |
+| **Gasless Relay** | Backend relay lets users transact without holding XLM |
+| **Rating Notifications** | Real-time notification center for ratings and milestone events |
 
-### Security Features
+### Security
 
-- ✅ **Authorization Checks**: All operations require proper authentication
-- ✅ **Token Whitelisting**: Only approved tokens can be used
-- ✅ **Arbiter Authorization**: Only authorized arbiters can resolve disputes
-- ✅ **Platform Fee Management**: Configurable platform fees with dedicated collector
-- ✅ **Emergency Refunds**: Automatic refunds after deadline expiration
+- All write operations require Stellar account authorization
+- Token whitelist — only approved assets accepted
+- Arbiter authorization gating
+- Configurable platform fees sent to designated collector
+- Emergency deadline-based refunds built into contract
 
 ---
 
-## 🔄 How It Works
-
-### Workflow Overview
-
-SecureFlow operates through a streamlined workflow that ensures security and fairness at every step:
+## Architecture
 
 ```
-1. Job Creation → 2. Application/Selection → 3. Work Start → 4. Milestone Submission → 5. Approval/Dispute → 6. Payment Release
+┌─────────────────────────────────────────────────────────┐
+│                      SecureFlow                         │
+├─────────────┬──────────────────┬────────────────────────┤
+│  Frontend   │     Backend      │   Soroban Contract     │
+│  React 19   │  Express (Node)  │   Rust / Soroban SDK   │
+│  Vite       │  Supabase        │                        │
+│  Zustand    │  Groq AI         │   Admin Module         │
+│  Radix UI   │  Gasless Relay   │   Escrow Core          │
+│  shadcn/ui  │                  │   Marketplace          │
+│             │                  │   Work Lifecycle       │
+│             │                  │   Refund System        │
+│             │                  │   Dispute Resolution   │
+└─────────────┴──────────────────┴────────────────────────┘
+         ↓                ↓                   ↓
+    Stellar Wallets Kit        Stellar SDK / Horizon
+                    ↓
+             Stellar Network
 ```
 
-### Detailed Flow
-
-#### 1. **Job Creation** 🎯
-
-Clients can create jobs in two ways:
-
-- **Open Job Marketplace**: Create a job without specifying a freelancer. Anyone can apply.
-- **Direct Contract**: Create a job directly with a known freelancer address.
-
-**What happens:**
-
-- Client deposits funds (XLM or whitelisted token) into the escrow contract
-- Sets up milestones with amounts and descriptions
-- Defines project details (title, description, deadline)
-- Optionally sets up arbiters for dispute resolution
-- Funds are locked in the smart contract
-
-#### 2. **Application & Selection** 📝
-
-For open jobs:
-
-- **Freelancers Browse**: View all available open jobs in the marketplace
-- **Apply to Jobs**: Freelancers submit applications with:
-  - Cover letter explaining their approach
-  - Proposed timeline for completion
-  - Their Stellar address
-- **Client Reviews**: Client can see all applications for their job
-- **Selection**: Client chooses a freelancer from the applicants
-- **Contract Activation**: Once selected, the contract is ready to begin
-
-For direct contracts:
-
-- Job is created with a specific freelancer address
-- No application process needed
-- Contract is immediately ready to start
-
-#### 3. **Work Start** 🚀
-
-- **Freelancer Initiates**: The chosen freelancer calls `start_work()` to activate the contract
-- **Status Change**: Escrow status changes from `Pending` to `InProgress`
-- **Work Begins**: Freelancer can now start working on milestones
-
-#### 4. **Milestone Submission** 📦
-
-- **Freelancer Completes Work**: After completing a milestone, freelancer submits it
-- **Submission Details**: Includes milestone index and updated description
-- **Status Update**: Milestone status changes to `Submitted`
-- **Awaiting Approval**: Client is notified and can review the work
-
-#### 5. **Milestone Review** ✅❌⚖️
-
-Client has three options for each milestone:
-
-- **✅ Approve**:
-  - Client approves the milestone
-  - Payment is automatically released to the freelancer
-  - Milestone status changes to `Approved`
-  - Freelancer's reputation increases
-
-- **❌ Reject**:
-  - Client rejects the milestone with feedback
-  - Milestone status changes to `Rejected`
-  - Freelancer can resubmit the milestone with improvements
-  - Rejection reason is stored and displayed to the freelancer
-
-- **⚖️ Dispute**:
-  - Either party (client or freelancer) can dispute a milestone
-  - Client raises a dispute with a reason
-  - Milestone status changes to `Disputed`
-  - Admin and arbiters are notified
-  - Dispute resolution process begins
-
-#### 6. **Dispute Resolution** ⚖️
-
-When a dispute is raised:
-
-- **Admin Review**: Platform admin reviews the dispute
-- **Arbiter Assignment**: Admin can authorize additional arbiters if needed
-- **Resolution Process**: Admin resolves the dispute by determining payment split
-  - Sets amount to be paid to freelancer (0 = full refund to client, >0 = partial/full payment to freelancer)
-- **Resolution Display**:
-  - Both client and freelancer see the resolution outcome on their job cards
-  - Clear indication of who won: "Freelancer won" with amount or "Client won - Full refund issued"
-  - Transparent display of resolution results for accountability
-
-#### 7. **Payment & Completion** 💰⭐
-
-- **Automatic Release**: Approved milestones trigger automatic payments
-- **Partial Payments**: Each milestone is paid individually
-- **Platform Fees**: Fees are automatically deducted and sent to fee collector
-- **Completion**: When all milestones are approved, the contract is marked as `Completed`
-- **Reputation Update**: Both parties' reputation scores are updated
-- **Client Rating**:
-  - After project completion, clients can rate freelancers (1-5 stars)
-  - Written reviews are stored on-chain
-  - Ratings affect freelancer's average rating and badge tier
-  - Rating data is displayed on freelancer profiles and job applications
-
-#### 8. **Refunds** 💸
-
-Refunds can occur in several scenarios:
-
-- **Before Work Starts**: Client can refund if no work has started
-- **After Deadline**: Emergency refund after deadline expiration
-- **Dispute Resolution**: Refunds can be issued as part of dispute resolution
-- **Automatic**: Automatic refunds after deadline if work isn't completed
-
----
-
-## 🏗️ Architecture
-
-### Smart Contract Architecture
-
-The SecureFlow smart contract is modular and consists of several key components:
+### Contract Modules
 
 ```
-SecureFlow Contract
-├── Admin Module          # Platform administration and controls
-├── Escrow Core          # Core escrow data management
-├── Escrow Management    # Escrow creation and lifecycle
-├── Marketplace          # Job marketplace and applications
-├── Work Lifecycle       # Milestone tracking and work flow
-├── Refund System        # Refund mechanisms and emergency refunds
-└── Storage Types        # Data structures and types
-```
-
-### Frontend Architecture
-
-The frontend is built with modern web technologies:
-
-- **Framework**: React 19 with TypeScript
-- **Build Tool**: Vite for fast development and optimized builds
-- **State Management**: Zustand for global state
-- **Styling**: Tailwind CSS with Radix UI components
-- **Contract Integration**: Auto-generated TypeScript clients from Soroban contracts
-- **Wallet Integration**: Stellar Wallets Kit for wallet connections
-
-### Data Flow
-
-```
-User Interface (React)
-    ↓
-Web3 Context / Contract Service
-    ↓
-Stellar SDK / Contract Client
-    ↓
-Stellar Network (Soroban)
-    ↓
-Smart Contract (Rust)
+contracts/secureflow/src/
+├── admin.rs              # Platform config, pause, fee management
+├── escrow_core.rs        # Core data model and state machine
+├── escrow_management.rs  # Escrow creation and lifecycle
+├── marketplace.rs        # Job listings and applications
+├── work_lifecycle.rs     # Milestone submit/approve/reject
+├── refund_system.rs      # Refund and emergency mechanisms
+├── storage_types.rs      # All on-chain data structures
+└── lib.rs                # Contract entrypoint
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-### Smart Contracts
-
-- **Language**: Rust
-- **Framework**: Soroban SDK
-- **Network**: Stellar (Soroban)
-- **Deployment**: Stellar Registry
-
-### Frontend
-
-- **Framework**: React 19
-- **Language**: TypeScript
-- **Build Tool**: Vite
-- **UI Library**: Radix UI
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Routing**: React Router
-- **Form Handling**: React Hook Form
-- **Validation**: Zod
-
-### Development Tools
-
-- **Contract Scaffolding**: Stellar Scaffold
-- **Package Manager**: npm
-- **Version Control**: Git
-- **Code Quality**: ESLint, Prettier
-
-### Blockchain Integration
-
-- **SDK**: @stellar/stellar-sdk
-- **Wallet Kit**: @creit.tech/stellar-wallets-kit
-- **Contract Clients**: Auto-generated from Soroban contracts
+| Layer | Technology |
+|---|---|
+| Smart Contract | Rust, Soroban SDK |
+| Frontend Framework | React 19, TypeScript, Vite |
+| UI | Tailwind CSS, Radix UI, shadcn/ui |
+| State | Zustand |
+| Routing | React Router v7 |
+| Forms | React Hook Form + Zod |
+| Backend | Node.js, Express, Supabase |
+| AI | Groq (cover letter analysis) |
+| Wallet | @creit.tech/stellar-wallets-kit |
+| Toolchain | Stellar Scaffold CLI |
+| CI/CD | GitHub Actions, Vercel, Railway |
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-Before you begin, ensure you have the following installed:
-
-- [Rust](https://www.rust-lang.org/tools/install) (latest stable version)
-- [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust)
-- Rust target: `wasm32v1-none` (install via `rustup target add wasm32v1-none`)
-- [Node.js](https://nodejs.org/) (v22 or higher)
-- [npm](https://www.npmjs.com/) (comes with Node.js)
-- [Stellar CLI](https://github.com/stellar/stellar-core)
-- [Scaffold Stellar CLI Plugin](https://github.com/AhaLabs/scaffold-stellar)
-
-### Installation
-
-1. **Clone the repository**
-
 ```bash
-git clone https://github.com/yourusername/secureflow.git
-cd secureflow
+# Rust toolchain
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup target add wasm32v1-none
+
+# Node.js 22+
+node --version  # v22 or higher
+
+# Stellar CLI + Scaffold plugin
+cargo install stellar-scaffold-cli
 ```
 
-2. **Install dependencies**
+### Local Development
 
 ```bash
+# 1. Clone
+git clone https://github.com/HyperSafeD/SecureFlow-scaffold.git
+cd SecureFlow-scaffold
+
+# 2. Install frontend dependencies
 npm install
-```
 
-3. **Set up environment variables**
-
-```bash
+# 3. Configure environment
 cp .env.example .env
+# Edit .env — see Environment Variables section below
+
+# 4. Start Stellar local network (Docker required)
+docker run --rm -p 8000:8000 stellar/quickstart:testing --local
+
+# 5. Build contract and auto-generate TypeScript clients
+stellar scaffold build --build-clients
+
+# 6. Start frontend
+npm run dev
+# → http://localhost:5173
+
+# 7. (Optional) Start backend
+cd backend && npm install && npm run dev
 ```
 
-Edit `.env` with your configuration:
+### Environment Variables
+
+**Frontend (`.env`)**
 
 ```env
-VITE_STELLAR_NETWORK=testnet
-VITE_SECUREFLOW_CONTRACT_ID=your_contract_id_here
-VITE_OWNER_ADDRESS=your_owner_address_here
+VITE_STELLAR_NETWORK=testnet           # local | testnet | mainnet
+VITE_SECUREFLOW_CONTRACT_ID=           # deployed contract address
+VITE_OWNER_ADDRESS=                    # admin stellar address
+VITE_API_URL=http://localhost:3001     # backend URL
 ```
 
-4. **Build contract clients**
+**Backend (`backend/.env`)**
 
-```bash
-stellar scaffold build --build-clients
+```env
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+GROQ_API_KEY=
+PORT=3001
 ```
-
-5. **Start development server**
-
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:5173`
 
 ### Building for Production
 
 ```bash
-npm run build
+npm run build       # frontend → dist/
+cd backend && npm run build   # backend → backend/dist/
 ```
 
-The production build will be in the `dist/` directory.
+---
+
+## How It Works
+
+### The Full Flow
+
+```
+Client creates job  →  Funds locked in escrow contract
+Freelancers apply   →  Client selects best applicant
+Freelancer starts   →  start_work() changes status to InProgress
+Milestone done      →  submit_milestone() notifies client
+Client reviews      →  approve (pay) / reject (revise) / dispute
+On dispute          →  Arbiters vote → Admin resolves → XLM released
+All done            →  Contract marked Completed, reputation updated
+```
+
+### Escrow State Machine
+
+```
+Pending ──start_work──▶ InProgress ──all approved──▶ Released
+   │                        │
+refund()              dispute raised
+   │                        │
+   ▼                        ▼
+Refunded               Disputed ──admin resolves──▶ Resolved
+```
+
+### Milestone States
+
+`NotStarted` → `Submitted` → `Approved` (payment released)  
+`Submitted` → `Rejected` → (freelancer resubmits)  
+`Submitted` → `Disputed` → `Resolved`
 
 ---
 
-## 📚 Usage Guide
+## Smart Contract API
 
-### For Clients
-
-#### Creating a Job
-
-1. **Navigate to Create Page**: Click "Create Job" in the navigation
-2. **Fill Job Details**:
-   - Project title and description
-   - Total budget amount
-   - Select payment token (XLM or whitelisted token)
-   - Set deadline
-3. **Set Up Milestones**:
-   - Add milestone amounts
-   - Add milestone descriptions
-   - Milestone amounts should sum to total budget
-4. **Choose Job Type**:
-   - **Open Job**: Leave freelancer field empty (anyone can apply)
-   - **Direct Contract**: Enter freelancer's Stellar address
-5. **Set Arbiters** (optional):
-   - Add arbiter addresses for dispute resolution
-   - Set required confirmations
-6. **Deposit Funds**: Approve transaction to deposit funds into escrow
-7. **Job Created**: Your job is now live!
-
-#### Managing Applications
-
-1. **View Applications**: Go to your job's detail page
-2. **Review Applications**: See all freelancer applications with cover letters and timelines
-3. **Select Freelancer**: Choose the best candidate
-4. **Accept Application**: Click "Accept" to assign the freelancer
-
-#### Reviewing Milestones
-
-1. **View Submitted Milestones**: Check your dashboard for submitted work
-2. **Review Work**: Examine the milestone submission
-3. **Take Action**:
-   - **Approve**: Release payment immediately
-   - **Reject**: Request revisions
-   - **Dispute**: Raise a dispute with reason
-
-### For Freelancers
-
-#### Finding Jobs
-
-1. **Browse Marketplace**: Visit the Jobs page to see all open jobs
-2. **Filter Jobs**: Use filters to find relevant opportunities
-3. **View Job Details**: Click on a job to see full details
-
-#### Applying to Jobs
-
-1. **Select Job**: Choose a job you want to apply for
-2. **Click Apply**: Fill out the application form
-3. **Submit Application**:
-   - Write a compelling cover letter
-   - Propose a realistic timeline
-   - Submit your application
-4. **Wait for Selection**: Client will review and select a candidate
-
-#### Working on Projects
-
-1. **Start Work**: Once selected, click "Start Work" to activate the contract
-2. **Complete Milestones**: Work through each milestone
-3. **Submit Milestones**: Submit completed work with descriptions
-4. **Track Status**: Monitor milestone approval status
-5. **Receive Payments**: Payments are automatically released upon approval
-
-### For Admins
-
-#### Platform Management
-
-1. **Access Admin Panel**: Navigate to Admin page (requires owner address)
-2. **Manage Platform**:
-   - Pause/unpause job creation
-   - Set platform fees
-   - Manage fee collector address
-   - Whitelist tokens
-   - Authorize arbiters
-
-#### Dispute Resolution
-
-1. **View Disputes**: Check the dispute resolution panel
-2. **Review Disputes**: Examine dispute details and evidence
-3. **Delegate Arbiters**: Assign additional arbiters if needed
-4. **Resolve Disputes**: Make final decisions based on arbiter votes
-
----
-
-## 🔧 Smart Contract Details
-
-### Key Functions
-
-#### Job Creation
+<details>
+<summary>Core Functions (click to expand)</summary>
 
 ```rust
+// Create a new escrow job
 pub fn create_escrow(
     depositor: Address,
-    beneficiary: Option<Address>,  // None for open jobs
+    beneficiary: Option<Address>,   // None = open marketplace job
     arbiters: Vec<Address>,
     required_confirmations: u32,
     milestones: Vec<(i128, String)>,
-    token: Option<Address>,  // None for native XLM
+    token: Option<Address>,         // None = native XLM
     total_amount: i128,
     duration: u32,
     project_title: String,
     project_description: String,
 ) -> Result<u32, Error>
+
+// Marketplace
+pub fn apply_to_job(escrow_id: u32, cover_letter: String, proposed_timeline: u32, freelancer: Address) -> Result<(), Error>
+pub fn accept_freelancer(escrow_id: u32, freelancer: Address, depositor: Address) -> Result<(), Error>
+
+// Work lifecycle
+pub fn start_work(escrow_id: u32, beneficiary: Address) -> Result<(), Error>
+pub fn submit_milestone(escrow_id: u32, milestone_index: u32, description: String, beneficiary: Address) -> Result<(), Error>
+pub fn approve_milestone(escrow_id: u32, milestone_index: u32, depositor: Address) -> Result<(), Error>
+pub fn reject_milestone(escrow_id: u32, milestone_index: u32, reason: String, depositor: Address) -> Result<(), Error>
+
+// Refunds
+pub fn refund_escrow(escrow_id: u32, depositor: Address) -> Result<(), Error>
+pub fn emergency_refund_after_deadline(escrow_id: u32, depositor: Address) -> Result<(), Error>
+
+// Reputation
+pub fn rate_freelancer(escrow_id: u32, rating: u32, review: String, depositor: Address) -> Result<(), Error>
 ```
 
-#### Marketplace
-
-```rust
-pub fn apply_to_job(
-    escrow_id: u32,
-    cover_letter: String,
-    proposed_timeline: u32,
-    freelancer: Address,
-) -> Result<(), Error>
-
-pub fn accept_freelancer(
-    escrow_id: u32,
-    freelancer: Address,
-    depositor: Address,
-) -> Result<(), Error>
-```
-
-#### Work Lifecycle
-
-```rust
-pub fn start_work(
-    escrow_id: u32,
-    beneficiary: Address,
-) -> Result<(), Error>
-
-pub fn submit_milestone(
-    escrow_id: u32,
-    milestone_index: u32,
-    description: String,
-    beneficiary: Address,
-) -> Result<(), Error>
-
-pub fn approve_milestone(
-    escrow_id: u32,
-    milestone_index: u32,
-    depositor: Address,
-) -> Result<(), Error>
-```
-
-#### Dispute Resolution
-
-Disputes are handled through the milestone approval process. When a client disputes a milestone, arbiters can vote on the resolution.
-
-#### Refunds
-
-```rust
-pub fn refund_escrow(
-    escrow_id: u32,
-    depositor: Address,
-) -> Result<(), Error>
-
-pub fn emergency_refund_after_deadline(
-    escrow_id: u32,
-    depositor: Address,
-) -> Result<(), Error>
-```
-
-### Escrow States
-
-- **Pending**: Job created, waiting for work to start
-- **InProgress**: Work has started, milestones being completed
-- **Released**: All milestones approved, contract completed
-- **Refunded**: Funds refunded to client
-- **Disputed**: Dispute raised, awaiting resolution
-- **Expired**: Deadline passed
-
-### Milestone States
-
-- **NotStarted**: Milestone not yet started
-- **Submitted**: Work submitted, awaiting approval
-- **Approved**: Approved by client, payment released
-- **Disputed**: Dispute raised
-- **Resolved**: Dispute resolved
-- **Rejected**: Rejected by client
-
-### Security Considerations
-
-- All write operations require authentication
-- Only contract owner can perform admin functions
-- Token whitelisting prevents unauthorized tokens
-- Arbiter authorization ensures trusted dispute resolution
-- Platform fees are configurable and transparent
+</details>
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-secureflow/
-├── contracts/                    # Smart contracts
-│   └── secureflow/
+SecureFlow-scaffold/
+├── contracts/
+│   └── secureflow/           # Soroban smart contract (Rust)
 │       └── src/
-│           ├── admin.rs          # Admin functions
-│           ├── escrow_core.rs    # Core escrow logic
-│           ├── escrow_management.rs  # Escrow creation
-│           ├── marketplace.rs    # Job marketplace
-│           ├── refund_system.rs  # Refund mechanisms
-│           ├── storage_types.rs  # Data structures
-│           ├── work_lifecycle.rs # Milestone workflow
-│           └── lib.rs            # Main contract
-├── src/                          # Frontend application
-│   ├── components/               # React components
-│   │   ├── admin/               # Admin components
-│   │   ├── approvals/           # Approval components
-│   │   ├── create/              # Job creation
-│   │   ├── dashboard/          # Dashboard components
-│   │   ├── freelancer/          # Freelancer components
-│   │   ├── jobs/                # Job marketplace
-│   │   └── ui/                  # UI components
-│   ├── contexts/                # React contexts
-│   │   ├── web3-context.tsx     # Web3/Stellar context
-│   │   └── ...
-│   ├── contracts/               # Contract integration
-│   │   └── generated/          # Auto-generated clients
-│   ├── hooks/                   # Custom React hooks
-│   ├── lib/                     # Utilities
-│   ├── pages/                   # Page components
-│   │   ├── AdminPage.tsx
-│   │   ├── ApprovalsPage.tsx
-│   │   ├── CreatePage.tsx
-│   │   ├── DashboardPage.tsx
-│   │   ├── FreelancerPage.tsx
-│   │   ├── JobsPage.tsx
-│   │   └── HomePage.tsx
-│   └── util/                    # Utility functions
-├── environments.toml            # Environment configs
-├── package.json                 # Frontend dependencies
-├── Cargo.toml                   # Contract dependencies
-└── README.md                    # This file
+├── src/                      # React frontend
+│   ├── components/
+│   │   ├── admin/
+│   │   ├── approvals/
+│   │   ├── chat/
+│   │   ├── create/
+│   │   ├── dashboard/
+│   │   ├── jobs/
+│   │   └── ui/               # shadcn/ui components
+│   ├── contexts/             # Web3 + wallet context
+│   ├── contracts/            # Auto-generated Soroban clients
+│   ├── hooks/
+│   ├── lib/                  # API client, utils
+│   ├── pages/
+│   └── providers/
+├── backend/                  # Express API + Supabase
+│   └── src/
+│       ├── routes/
+│       ├── lib/              # Supabase, Groq clients
+│       └── middleware/
+├── packages/                 # npm workspace packages
+├── supabase/                 # DB migrations
+├── environments.toml         # Stellar network configs
+├── Cargo.toml
+└── package.json
 ```
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please follow these steps:
+SecureFlow is an open-source project growing beyond the hackathon. We welcome contributors at every level — Rust contract devs, React engineers, and everything in between.
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes**
-4. **Commit your changes**: `git commit -m 'Add amazing feature'`
-5. **Push to the branch**: `git push origin feature/amazing-feature`
-6. **Open a Pull Request**
+### Getting Involved
 
-### Development Guidelines
+1. Check the [open issues](https://github.com/HyperSafeD/SecureFlow-scaffold/issues) — they're labelled and scoped to be tackled solo
+2. Fork the repo and create a branch: `git checkout -b feat/your-feature`
+3. Make your changes (run `npm run lint` and `npm test` before pushing)
+4. Open a PR against `main`
 
-- Follow the existing code style
-- Write tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting
+### Labels
 
-### Code of Conduct
+| Label | Meaning |
+|---|---|
+| `good first issue` | Small, well-scoped — great entry point |
+| `contract` | Soroban / Rust smart contract work |
+| `frontend` | React / TypeScript UI work |
+| `backend` | Node.js / Express / Supabase work |
+| `security` | Security-critical changes |
+| `enhancement` | New features |
+| `bug` | Something broken |
+| `performance` | Speed / cost improvements |
+| `testing` | Test coverage |
+| `documentation` | Docs and guides |
 
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Built with [Scaffold Stellar](https://github.com/AhaLabs/scaffold-stellar)
-- Powered by [Stellar](https://stellar.org) and [Soroban](https://soroban.stellar.org)
-- UI components from [Radix UI](https://www.radix-ui.com/)
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before submitting.
 
 ---
 
-## 📞 Support
+## Deployment
 
-- **Documentation**: Check this README and inline code comments
-- **Issues**: Open an issue on GitHub
-- **Discussions**: Use GitHub Discussions for questions
+| Service | Purpose | Status |
+|---|---|---|
+| Vercel | Frontend hosting | [![Vercel](https://img.shields.io/badge/Vercel-deployed-black?logo=vercel)](https://secure-flow-scaffold.vercel.app) |
+| Railway | Backend API | Active |
+| Stellar Testnet | Smart contract | Active |
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-**Built with ❤️ on Stellar**
+**🏆 Stellar Scaffold Hackathon Winner**
 
-[Stellar](https://stellar.org) • [Soroban](https://soroban.stellar.org) • [Documentation](https://developers.stellar.org)
+Built with Rust, React, and the Stellar ecosystem.  
+Open source under HyperSafeD — contributions welcome.
+
+[Stellar](https://stellar.org) · [Soroban Docs](https://developers.stellar.org/docs/smart-contracts) · [Scaffold CLI](https://github.com/stellar/scaffold-stellar) · [HyperSafeD](https://github.com/HyperSafeD)
 
 </div>

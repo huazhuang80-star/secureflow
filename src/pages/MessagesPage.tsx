@@ -63,7 +63,8 @@ export default function MessagesPage() {
     try {
       const convs = await getInbox(myAddress);
       setConversations(convs);
-    } catch (err) {
+    } catch {
+      // inbox fetch failed silently; retry on next poll interval
     } finally {
       setLoading(false);
     }
