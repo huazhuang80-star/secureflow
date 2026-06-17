@@ -1,0 +1,39 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="120" y1="300" x2="392" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="shieldFill" x1="160" y1="80" x2="352" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.06"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0B1B3F" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Subtle top sheen -->
+  <rect width="512" height="256" rx="112" fill="#FFFFFF" fill-opacity="0.06"/>
+
+  <!-- Shield -->
+  <g filter="url(#soft)">
+    <path d="M256 64L400 120V256C400 340 336 410 256 448C176 410 112 340 112 256V120L256 64Z"
+          fill="url(#shieldFill)" stroke="#FFFFFF" stroke-opacity="0.65" stroke-width="10"/>
+  </g>
+
+  <!-- S monogram -->
+  <path d="M312 196C312 168 290 150 258 150C226 150 200 170 200 200C200 232 226 244 258 252C290 260 318 270 318 304C318 336 290 358 256 358C220 358 196 338 196 308"
+        stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" fill="none"/>
+
+  <!-- Flow / verification checkmark -->
+  <path d="M168 330L226 388L360 250"
+        stroke="url(#accent)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

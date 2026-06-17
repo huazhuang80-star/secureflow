@@ -1,21 +1,23 @@
 <div align="center">
 
+<img src="brand/org-avatar.png" alt="SecureFlow" width="112" height="112" />
+
 # SecureFlow
 
 ### Trustless Freelancer Escrow on Stellar
 
-[![Stellar Scaffold Hackathon Winner](https://img.shields.io/badge/🏆_Stellar_Scaffold_Hackathon-Winner-FFD700?style=for-the-badge)](https://stellar.org)
+[![Global Hackathon Winner](https://img.shields.io/badge/🏆_Global_Stellar_Hackathon-Winner-FFD700?style=for-the-badge)](https://stellar.org)
 [![Built on Stellar](https://img.shields.io/badge/Built_on-Stellar_Soroban-7D00FF?style=for-the-badge&logo=stellar)](https://stellar.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![CI](https://img.shields.io/github/actions/workflow/status/HyperSafeD/SecureFlow-scaffold/node.yml?label=CI&style=flat-square)](https://github.com/HyperSafeD/SecureFlow-scaffold/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/Secureflow-protocol/secureflow/node.yml?label=CI&style=flat-square)](https://github.com/Secureflow-protocol/secureflow/actions)
 
-**A decentralized freelancer marketplace built on Stellar (Soroban) that provides secure, trustless escrow services for freelance work agreements.**
+**SecureFlow is a decentralized freelancer marketplace on Stellar (Soroban) providing secure, trustless, milestone-based escrow for freelance work — and a 🏆 winner of a global Stellar hackathon.**
 
-[Live Demo](https://secure-flow-scaffold.vercel.app) · [Documentation](#getting-started) · [Contributing](#contributing) · [Open Issues](https://github.com/HyperSafeD/SecureFlow-scaffold/issues)
+[Live Demo](https://secure-flow-scaffold.vercel.app) · [Roadmap](#-roadmap--vision) · [Documentation](#getting-started) · [Contributing](#contributing) · [Open Issues](https://github.com/Secureflow-protocol/secureflow/issues)
 
 </div>
 
@@ -23,7 +25,7 @@
 
 ## 🏆 Hackathon Recognition
 
-SecureFlow was built for and **won the [Stellar Scaffold Hackathon](https://stellar.org)** — a global competition challenging builders to ship production-grade dApps using the Stellar Scaffold CLI toolchain on Soroban.
+SecureFlow was built for and **won the [Stellar Scaffold Hackathon](https://stellar.org) — a global competition** challenging builders worldwide to ship production-grade dApps using the Stellar Scaffold CLI toolchain on Soroban. SecureFlow took the top spot.
 
 The project stood out for its complete end-to-end implementation: a Soroban smart contract handling real on-chain escrow logic, a React frontend auto-wired to contract clients via `stellar-scaffold`, and a gasless relay backend that makes blockchain interactions seamless for users.
 
@@ -67,6 +69,40 @@ SecureFlow solves the freelance trust problem. When you hire someone online toda
 - Arbiter authorization gating
 - Configurable platform fees sent to designated collector
 - Emergency deadline-based refunds built into contract
+
+---
+
+## 🚀 Roadmap & Vision
+
+SecureFlow is graduating from hackathon winner to a **production-grade, audited, privacy-preserving
+escrow protocol**. The work is organized into four public milestones — each tracked as labelled
+[issues](https://github.com/Secureflow-protocol/secureflow/issues) and aligned with our
+[Stellar Community Fund](https://communityfund.stellar.org) (Build) application.
+
+### 🛡️ M0 — Open-Source Hardening
+Make the protocol credible and contributor-ready: a comprehensive Soroban test suite (the contract
+currently ships none), migration of per-entity data from `instance` → `persistent` storage so it
+scales, structured on-chain events, and contract tests + lint wired into CI.
+
+### 🔐 M1 — Security & Audit Prep
+Get audit-ready: fund-conservation invariants and property tests, bounds-checked arbiter awards, a
+global emergency circuit-breaker, supply-chain scanning, and reproducible WASM builds. *(Targets the
+free **SCF Audit Bank**.)*
+
+### 🕶️ M2 — Zero-Knowledge Privacy Layer  *(our differentiator)*
+Bring privacy to on-chain work — features no other Stellar freelancing primitive has:
+- **ZK reputation proofs** — prove "completed ≥ N jobs" / "rating ≥ X" without revealing clients or projects.
+- **ZK freelancer credentials** — Sybil-resistant, privacy-preserving identity/skill proofs.
+- **ZK dispute evidence** — prove a deliverable met the agreed conditions without exposing the work.
+
+### 🌐 M3 — Product Growth
+Make it a product people use daily: an event-driven indexer (replacing polling), USDC/stablecoin
+settlement, streaming/time-based payments, dispute-escalation tiers with arbiter staking, and a
+hardened transaction UX.
+
+> 📋 Track everything on the [public roadmap board](https://github.com/Secureflow-protocol/secureflow/issues)
+> and [milestones](https://github.com/Secureflow-protocol/secureflow/milestones). Contributions to any
+> milestone are welcome — see [Contributing](#contributing).
 
 ---
 
@@ -146,8 +182,8 @@ cargo install stellar-scaffold-cli
 
 ```bash
 # 1. Clone
-git clone https://github.com/HyperSafeD/SecureFlow-scaffold.git
-cd SecureFlow-scaffold
+git clone https://github.com/Secureflow-protocol/secureflow.git
+cd secureflow
 
 # 2. Install frontend dependencies
 npm install
@@ -277,7 +313,7 @@ pub fn rate_freelancer(escrow_id: u32, rating: u32, review: String, depositor: A
 ## Project Structure
 
 ```
-SecureFlow-scaffold/
+secureflow/
 ├── contracts/
 │   └── secureflow/           # Soroban smart contract (Rust)
 │       └── src/
@@ -316,7 +352,7 @@ SecureFlow is an open-source project growing beyond the hackathon. We welcome co
 
 ### Getting Involved
 
-1. Check the [open issues](https://github.com/HyperSafeD/SecureFlow-scaffold/issues) — they're labelled and scoped to be tackled solo
+1. Check the [open issues](https://github.com/Secureflow-protocol/secureflow/issues) — they're labelled and scoped to be tackled solo
 2. Fork the repo and create a branch: `git checkout -b feat/your-feature`
 3. Make your changes (run `npm run lint` and `npm test` before pushing)
 4. Open a PR against `main`
@@ -352,17 +388,17 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-**🏆 Stellar Scaffold Hackathon Winner**
+**🏆 Global Stellar Hackathon Winner**
 
 Built with Rust, React, and the Stellar ecosystem.  
-Open source under HyperSafeD — contributions welcome.
+Open source under [Secureflow-protocol](https://github.com/Secureflow-protocol) — contributions welcome.
 
-[Stellar](https://stellar.org) · [Soroban Docs](https://developers.stellar.org/docs/smart-contracts) · [Scaffold CLI](https://github.com/stellar/scaffold-stellar) · [HyperSafeD](https://github.com/HyperSafeD)
+[Stellar](https://stellar.org) · [Soroban Docs](https://developers.stellar.org/docs/smart-contracts) · [Scaffold CLI](https://github.com/stellar/scaffold-stellar) · [Secureflow-protocol](https://github.com/Secureflow-protocol)
 
 </div>
