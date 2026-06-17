@@ -80,22 +80,27 @@ escrow protocol**. The work is organized into four public milestones — each tr
 [Stellar Community Fund](https://communityfund.stellar.org) (Build) application.
 
 ### 🛡️ M0 — Open-Source Hardening
+
 Make the protocol credible and contributor-ready: a comprehensive Soroban test suite (the contract
 currently ships none), migration of per-entity data from `instance` → `persistent` storage so it
 scales, structured on-chain events, and contract tests + lint wired into CI.
 
 ### 🔐 M1 — Security & Audit Prep
-Get audit-ready: fund-conservation invariants and property tests, bounds-checked arbiter awards, a
-global emergency circuit-breaker, supply-chain scanning, and reproducible WASM builds. *(Targets the
-free **SCF Audit Bank**.)*
 
-### 🕶️ M2 — Zero-Knowledge Privacy Layer  *(our differentiator)*
+Get audit-ready: fund-conservation invariants and property tests, bounds-checked arbiter awards, a
+global emergency circuit-breaker, supply-chain scanning, and reproducible WASM builds. _(Targets the
+free **SCF Audit Bank**.)_
+
+### 🕶️ M2 — Zero-Knowledge Privacy Layer _(our differentiator)_
+
 Bring privacy to on-chain work — features no other Stellar freelancing primitive has:
+
 - **ZK reputation proofs** — prove "completed ≥ N jobs" / "rating ≥ X" without revealing clients or projects.
 - **ZK freelancer credentials** — Sybil-resistant, privacy-preserving identity/skill proofs.
 - **ZK dispute evidence** — prove a deliverable met the agreed conditions without exposing the work.
 
 ### 🌐 M3 — Product Growth
+
 Make it a product people use daily: an event-driven indexer (replacing polling), USDC/stablecoin
 settlement, streaming/time-based payments, dispute-escalation tiers with arbiter staking, and a
 hardened transaction UX.
