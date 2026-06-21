@@ -1,0 +1,56 @@
+name: Contract issue
+description: Report or propose a Soroban contract change.
+title: "[Contract]: "
+labels:
+  - contract
+  - security
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for public contract bugs, invariants, gas issues, tests, or API concerns. For exploitable vulnerabilities, follow SECURITY.md and use a private advisory instead.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the contract behavior, invariant, or API concern.
+    validations:
+      required: true
+
+  - type: input
+    id: function
+    attributes:
+      label: Affected function or module
+      placeholder: "contracts/secureflow/src/... or function_name()"
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Security implications
+      description: Explain possible effects on escrow funds, milestones, disputes, deadlines, permissions, storage, events, generated clients, or gas usage.
+      placeholder: "Impact is limited to ... / Could affect ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction or test case
+      description: Include a failing test, command, transaction flow, or minimal scenario when possible.
+      render: shell
+
+  - type: textarea
+    id: proposed-fix
+    attributes:
+      label: Proposed fix
+      description: Share the expected contract behavior or implementation direction.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link related docs, issues, PRs, audits, or Stellar/Soroban references.
+
