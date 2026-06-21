@@ -362,6 +362,26 @@ SecureFlow is an open-source project growing beyond the hackathon. We welcome co
 3. Make your changes (run `npm run lint` and `npm test` before pushing)
 4. Open a PR against `main`
 
+### Project Board
+
+Track what's available, in progress, and done on the **[SecureFlow — GrantFox Roadmap](https://github.com/orgs/Secureflow-protocol/projects)** board. It's the fastest way to see where to jump in.
+
+The board flows left to right:
+
+| Column           | What it means                                               |
+| ---------------- | ----------------------------------------------------------- |
+| **Backlog**      | Triaged, but not yet ready to pick up                       |
+| **Up for Grabs** | Ready to claim — look for `good first issue` to get started |
+| **In Progress**  | Actively being worked on (a PR is open)                     |
+| **In Review**    | PR is open and awaiting maintainer review                   |
+| **Done**         | Merged and shipped                                          |
+
+Automation keeps it in sync, so you rarely have to move cards by hand:
+
+- A **new issue** is added to **Backlog**; issues labelled `good first issue` move to **Up for Grabs**.
+- Opening a **PR** moves its linked issue to **In Progress**.
+- A **merged** PR moves the issue to **Done**.
+
 ### Labels
 
 | Label              | Meaning                                |
