@@ -1,0 +1,68 @@
+name: Contract issue
+description: Report or propose a change that affects Soroban contract behavior.
+title: "[Contract]: "
+labels: ["contract"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Contract issues can affect escrowed funds and security guarantees. Include precise function and invariant details.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: Briefly describe the contract concern.
+    validations:
+      required: true
+  - type: input
+    id: contract
+    attributes:
+      label: Contract or module
+      placeholder: contracts/secureflow/src/...
+    validations:
+      required: true
+  - type: textarea
+    id: functions
+    attributes:
+      label: Affected function(s)
+      description: Name the public entrypoints, helpers, or storage paths involved.
+      placeholder: |
+        - create_contract
+        - release_milestone
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security implications
+      description: Could this affect funds, authorization, state integrity, replay resistance, or privacy?
+      placeholder: Describe the worst credible impact and affected actors.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected invariant or behavior
+      placeholder: What property should always hold?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction or test idea
+      placeholder: Provide a failing test case, transaction sequence, or command.
+  - type: textarea
+    id: validation
+    attributes:
+      label: Suggested validation
+      placeholder: |
+        cargo fmt --all --check
+        cargo clippy --workspace --all-targets -- -D warnings
+        cargo test --workspace
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure
+      options:
+        - label: This issue does not include secrets, private keys, wallet seed phrases, or exploitable private data.
+          required: true
